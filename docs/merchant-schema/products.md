@@ -118,52 +118,38 @@ Master product catalog table containing all merchant products.
 
 ---
 
-### product_variants
+### merchant_product_variants
 
 Product variants for size, color, and other attribute combinations.
 
-**Primary Key:** `id` (SERIAL)
+**Primary Key:** `id` (UUID)
 
-**Foreign Key:** `productId` → `products.id` (ON DELETE CASCADE)
+**Foreign Keys:**
+- `merchantId` → `merchants.id` (ON DELETE CASCADE)
+- `variantId` → `products.id` (ON DELETE CASCADE)
 
 **Columns:**
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
-| id | SERIAL | PK, NOT NULL | Unique variant identifier |
-| productId | INTEGER | FK, NOT NULL | Reference to product (uses integer) |
-| variantSku | VARCHAR(100) | NOT NULL | Variant-specific SKU |
-| variantName | VARCHAR(255) | NOT NULL | Variant display name (e.g., "Red - Large") |
-| barcode | VARCHAR(50) | - | Variant barcode/UPC/EAN |
-| attributes | JSONB | NOT NULL | Variant attributes combination |
-| price | DECIMAL(15,2) | NOT NULL | Variant-specific price |
-| compareAtPrice | DECIMAL(15,2) | - | Variant MRP for strike-through pricing |
-| costPrice | DECIMAL(15,2) | - | Variant cost price |
-| stockAvailable | INTEGER | NOT NULL, DEFAULT 0 | Available stock quantity |
-| stockOnOrder | INTEGER | DEFAULT 0 | Stock on order (incoming) |
-| lowStockThreshold | INTEGER | DEFAULT 5 | Low stock alert threshold |
+| id | UUID | PK, NOT NULL | Unique variant identifier |
+| merchantId | UUID | FK, NOT NULL | Reference to merchant |
+| variantId | UUID | FK, NOT NULL | Reference to product |
+| variantSku | UUID | - | Variant-specific SKU identifier |
+| variantName | VARCHAR(255) | - | Variant display name (e.g., "Red - Large") |
+| variantAttributes | JSONB | - | Variant attributes combination |
+| basePrice | DECIMAL(15,2) | - | Variant base price |
+| sellingPrice | DECIMAL(15,2) | - | Variant selling price |
 | isActive | BOOLEAN | DEFAULT true | Variant active status |
-| imageUrl | VARCHAR(500) | - | Variant-specific image |
-| weight | DECIMAL(10,2) | - | Variant weight in grams |
-| weightUnit | VARCHAR(10) | DEFAULT 'g' | Weight unit |
 | createdAt | TIMESTAMP | NOT NULL, DEFAULT NOW | Record creation timestamp |
 | updatedAt | TIMESTAMP | NOT NULL, DEFAULT NOW | Last update timestamp |
 
-**Indexes:**
-- `variant_product` on `productId`
-- `variant_sku` on `variantSku`
-- `variant_barcode` on `barcode`
-- `variant_active` on `isActive`
-- `variant_stock` on `stockAvailable`
-
 **Business Rules:**
 - Each variant represents a unique combination of product attributes
-- `attributes` format: `{"color": "Red", "size": "Large"}`
-- Variant price can differ from base product price
-- Variant SKU must be unique across all variants
-- `stockAvailable` is the actual sellable quantity
-- `stockOnOrder` tracks incoming stock (not yet available)
-- `stockAvailable <= lowStockThreshold` triggers low stock alert
-- Variants are deleted when parent product is deleted (CASCADE)
+- `variantAttributes` format: `{"color": "Red", "size": "Large"}`
+- Variant pricing can differ from base product price
+- `basePrice` and `sellingPrice` allow for flexible pricing strategies
+- Variants are deleted when merchant or parent product is deleted (CASCADE)
+- Only `isActive = true` variants are displayed to customers
 
 ---
 
