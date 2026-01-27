@@ -200,6 +200,8 @@ Global EMI plan templates available to all merchants.
 - `processingFeeType` determines if fee is fixed or percentage-based
 - Order amount must be between `minAmount` and `maxAmount` to qualify
 
+**Note:** Both the `EmiPlans` and `merchantEmiPlans` TypeScript exports in the schema map to the same database table `merchant_emi_plans`. The first represents global EMI plan templates, while the second represents merchant-specific overrides of those templates.
+
 ---
 
 ### merchant_emi_plans (Merchant-specific)
@@ -220,7 +222,7 @@ Merchant-specific EMI plan overrides.
 | emiPlanId | UUID | FK, NOT NULL | Reference to global EMI plan |
 | processingFee | DECIMAL(15,2) | NOT NULL | Override processing fee |
 | processingFeeType | VARCHAR(20) | NOT NULL, DEFAULT 'fixed' | Fee type (fixed/percentage) |
-| overrideInterestRate | BOOLEAN | NOT NULL, DEFAULT false | Override global interest rate |
+| overrideIntrestRate | BOOLEAN | NOT NULL, DEFAULT false | Override global interest rate |
 | subvention | DECIMAL(15,2) | NOT NULL | Merchant subvention amount |
 | subventionType | VARCHAR(20) | NOT NULL, DEFAULT 'percentage' | Subvention type |
 | isActive | BOOLEAN | NOT NULL, DEFAULT true | Override active status |
@@ -229,7 +231,7 @@ Merchant-specific EMI plan overrides.
 
 **Business Rules:**
 - Allows merchants to customize global EMI plans
-- `overrideInterestRate = true` uses merchant-specific rate
+- `overrideIntrestRate = true` uses merchant-specific rate
 - Subvention reduces customer interest cost (merchant bears the cost)
 
 ---
@@ -242,7 +244,7 @@ Variant-specific EMI plan overrides.
 
 **Foreign Keys:**
 - `merchantId` → `merchants.id` (ON DELETE CASCADE)
-- `variantId` → `products.id` (ON DELETE CASCADE)
+- `variantId` → `products.id` (ON DELETE CASCADE) - References the products table (not product_variants)
 - `emiPlanId` → `merchant_emi_plans.id` (ON DELETE CASCADE)
 
 **Columns:**
@@ -250,11 +252,11 @@ Variant-specific EMI plan overrides.
 |--------|------|-------------|-------------|
 | id | UUID | PK, NOT NULL | Unique variant plan identifier |
 | merchantId | UUID | FK, NOT NULL | Reference to merchant |
-| variantId | UUID | FK, NOT NULL | Reference to product variant |
+| variantId | UUID | FK, NOT NULL | Reference to product (products table) |
 | emiPlanId | UUID | FK, NOT NULL | Reference to global EMI plan |
 | processingFee | DECIMAL(15,2) | NOT NULL | Override processing fee |
 | processingFeeType | VARCHAR(20) | NOT NULL, DEFAULT 'fixed' | Fee type (fixed/percentage) |
-| overrideInterestRate | BOOLEAN | NOT NULL, DEFAULT false | Override global interest rate |
+| overrideIntrestRate | BOOLEAN | NOT NULL, DEFAULT false | Override global interest rate |
 | subvention | DECIMAL(15,2) | NOT NULL | Merchant subvention amount |
 | subventionType | VARCHAR(20) | NOT NULL, DEFAULT 'percentage' | Subvention type |
 | isActive | BOOLEAN | NOT NULL, DEFAULT true | Variant plan active status |
