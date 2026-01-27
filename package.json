@@ -8,5 +8,8 @@
     "@types/pg": "^8.16.0",
     "drizzle-kit": "^0.31.8",
     "tsx": "^4.21.0"
+  },
+  "scripts": {
+    "docs:lms:publish": "tsx scripts/publish-lms-docs-to-notion.ts"
   }
 }
