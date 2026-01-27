@@ -6,7 +6,7 @@
 
 Master order table containing all order information across all channels and fulfillment types.
 
-**Primary Key:** `id` (SERIAL)
+**Primary Key:** `id` (UUID)
 
 **Foreign Keys:**
 - `customerId` → `users.id` (No DELETE action specified)
@@ -17,7 +17,7 @@ Master order table containing all order information across all channels and fulf
 **Columns:**
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
-| id | SERIAL | PK, NOT NULL | Unique order identifier |
+| id | UUID | PK, NOT NULL | Unique order identifier |
 | orderNumber | VARCHAR(50) | UNIQUE, NOT NULL | Human-readable order number |
 | customerId | UUID | FK, NOT NULL | Reference to customer user |
 | merchantId | UUID | FK, NOT NULL | Reference to merchant |
@@ -53,7 +53,7 @@ Master order table containing all order information across all channels and fulf
 | utmSource | VARCHAR(255) | - | UTM source tracking |
 | utmMedium | VARCHAR(255) | - | UTM medium tracking |
 | utmCampaign | VARCHAR(255) | - | UTM campaign tracking |
-| loanApplicationId | INTEGER | - | Reference to LOS loan application (if financed) |
+| loanApplicationId | UUID | - | Reference to LOS loan application (if financed) |
 | createdAt | TIMESTAMP | NOT NULL, DEFAULT NOW | Order creation timestamp |
 | updatedAt | TIMESTAMP | NOT NULL, DEFAULT NOW | Last update timestamp |
 
@@ -116,7 +116,7 @@ Line items for orders with product details and pricing snapshots.
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
 | id | UUID | PK, NOT NULL | Unique line item identifier |
-| orderId | INTEGER | FK, NOT NULL | Reference to parent order |
+| orderId | UUID | FK, NOT NULL | Reference to parent order |
 | productId | UUID | NOT NULL | Reference to product |
 | productVariantId | UUID | - | Reference to product variant (if applicable) |
 | bundleId | UUID | - | Reference to product bundle (if applicable) |
