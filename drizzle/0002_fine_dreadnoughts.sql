@@ -1,0 +1,1 @@
+ALTER TABLE "merchant"."qrTable" ADD COLUMN "expiresAt" timestamp;
