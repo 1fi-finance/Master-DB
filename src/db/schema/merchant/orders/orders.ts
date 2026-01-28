@@ -1,5 +1,4 @@
 import {
-    serial,
     uuid,
     integer,
     varchar,
@@ -10,11 +9,11 @@ import {
     jsonb,
     index
 } from "drizzle-orm/pg-core";
+
 import { merchantSchema } from "../../definitions";
 import { orderStatusEnum, paymentStatusEnum, channelTypeEnum, fulfillmentTypeEnum } from "../../enums";
-import { merchants } from "../merchants/merchants";
-import { merchantStoresTable } from "../merchants/merchants";
 import { usersTable } from "../../users/index";
+import { merchants, merchantStoresTable } from "../merchants/merchants";
 
 // Orders - Master order table
 export const ordersTable = merchantSchema.table("orders", {

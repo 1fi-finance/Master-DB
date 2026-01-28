@@ -1,6 +1,7 @@
-import { uuid, serial, varchar, text, decimal, integer, boolean, timestamp } from "drizzle-orm/pg-core";
-import { mutualFundTypeEnum } from "../enums";
+import { uuid, varchar, text, decimal, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+
 import { losSchema } from "../definitions";
+import { mutualFundTypeEnum } from "../enums";
 
 export const loanProductsTable = losSchema.table("loan_products", {
     id: uuid().defaultRandom().primaryKey(),

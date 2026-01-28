@@ -1,3 +1,4 @@
+/* eslint-disable */
 
 try {
     console.log("Importing los/products...");
@@ -9,6 +10,8 @@ try {
 
 try {
     console.log("Importing los/applications...");
+    /* eslint-disable */
+    const fs = require('fs');
     const apps = require("../src/db/schema/los/applications");
     console.log("los/applications exports:", Object.keys(apps));
 } catch (e) {

@@ -1,6 +1,6 @@
-import { serial, varchar, integer, timestamp, boolean, uuid } from "drizzle-orm/pg-core";
-import { usersSchema } from "../definitions";
+import { varchar, integer, timestamp, boolean, uuid } from "drizzle-orm/pg-core";
 
+import { usersSchema } from "../definitions";
 import { userStatusEnum } from "../enums";
 
 

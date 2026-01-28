@@ -1,7 +1,8 @@
-import { serial, integer, date, decimal, varchar, boolean, timestamp, index, uuid } from "drizzle-orm/pg-core";
-import { loanAccountTable } from "../account";
-import { adjustmentReasonEnum } from "../../enums";
+import { date, decimal, varchar, boolean, timestamp, index, uuid } from "drizzle-orm/pg-core";
+
 import { lmsSchema } from "../../definitions";
+import { adjustmentReasonEnum } from "../../enums";
+import { loanAccountTable } from "../account";
 
 export const interestRateAdjustmentTable = lmsSchema.table("interest_rate_adjustment", {
     id: uuid().defaultRandom().primaryKey(),

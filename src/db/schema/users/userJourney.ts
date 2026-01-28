@@ -1,7 +1,8 @@
 import { uuid, varchar, timestamp, index } from "drizzle-orm/pg-core";
-import { productsTable, productVariantsTable } from "../merchant/products/products";
+
 import { usersSchema } from "../definitions";
 import { usersTable } from "./index";
+import { productsTable, productVariantsTable } from "../merchant/products/products";
 import { sessionJourney } from "../shared/index";
 export const userJourney = usersSchema.table("merchant_user_journey", {
     id: uuid().primaryKey(),

@@ -1,6 +1,7 @@
-import { serial, integer, decimal, date, boolean, varchar, text, timestamp, index, uuid } from "drizzle-orm/pg-core";
-import { emiScheduleTable } from "../repayment";
+import { integer, decimal, date, boolean, varchar, text, timestamp, index, uuid } from "drizzle-orm/pg-core";
+
 import { lmsSchema } from "../../definitions";
+import { emiScheduleTable } from "../repayment";
 
 export const penaltyCalculationTable = lmsSchema.table("penalty_calculation", {
     id: uuid().defaultRandom().primaryKey(),

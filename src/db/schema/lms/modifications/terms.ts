@@ -1,4 +1,5 @@
-import { serial, integer, decimal, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { integer, decimal, text, timestamp, uuid } from "drizzle-orm/pg-core";
+
 import { loanRestructuringTable } from "./restructuring";
 import { lmsSchema } from "../../definitions";
 

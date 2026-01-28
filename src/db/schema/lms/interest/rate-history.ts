@@ -1,6 +1,7 @@
-import { serial, integer, decimal, date, varchar, text, timestamp, index, uuid } from "drizzle-orm/pg-core";
-import { loanAccountTable } from "../account";
+import { decimal, date, varchar, text, timestamp, index, uuid } from "drizzle-orm/pg-core";
+
 import { lmsSchema } from "../../definitions";
+import { loanAccountTable } from "../account";
 
 export const interestRateHistoryTable = lmsSchema.table("interest_rate_history", {
     id: uuid().defaultRandom().primaryKey(),

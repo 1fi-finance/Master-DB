@@ -1,6 +1,7 @@
-import { merchantSchema } from "../../definitions";
 import { uuid, varchar, text, timestamp, decimal, integer, boolean } from "drizzle-orm/pg-core";
+
 import { merchants } from "./merchants";
+import { merchantSchema } from "../../definitions";
 import { productsTable } from "../products/products";
 
 export const EmiPlans = merchantSchema.table("merchant_emi_plans", {

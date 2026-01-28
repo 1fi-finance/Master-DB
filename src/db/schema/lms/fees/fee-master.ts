@@ -1,6 +1,7 @@
-import { serial, varchar, decimal, boolean, date, timestamp, index, uuid } from "drizzle-orm/pg-core";
-import { feeTypeEnum, feeCalculationMethodEnum } from "../../enums";
+import { varchar, decimal, boolean, date, timestamp, index, uuid } from "drizzle-orm/pg-core";
+
 import { lmsSchema } from "../../definitions";
+import { feeTypeEnum, feeCalculationMethodEnum } from "../../enums";
 
 export const feeMasterTable = lmsSchema.table("fee_master", {
     id: uuid().defaultRandom().primaryKey(),

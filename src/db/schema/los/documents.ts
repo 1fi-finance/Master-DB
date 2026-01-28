@@ -1,8 +1,9 @@
-import { serial, integer, varchar, text, timestamp, index, uuid } from "drizzle-orm/pg-core";
+import { integer, varchar, text, timestamp, index, uuid } from "drizzle-orm/pg-core";
+
 import { documentTypeEnum, documentStatusEnum } from "../enums";
 import { loanApplicationsTable } from "./applications";
-import { usersTable } from "../users";
 import { losSchema } from "../definitions";
+import { usersTable } from "../users";
 
 export const documentsTable = losSchema.table("documents", {
     id: uuid().defaultRandom().primaryKey(),

@@ -1,8 +1,9 @@
-import { serial, integer, varchar, decimal, timestamp, date, index, uuid } from "drizzle-orm/pg-core";
+import { integer, varchar, decimal, timestamp, date, index, uuid } from "drizzle-orm/pg-core";
+
+import { lmsSchema } from "../definitions";
+import { loanStatusEnum } from "../enums";
 import { loanApplicationsTable } from "../los/applications";
 import { loanSanctionTable } from "../los/sanction";
-import { loanStatusEnum } from "../enums";
-import { lmsSchema } from "../definitions";
 
 export const loanAccountTable = lmsSchema.table("loan_account", {
     id: uuid().defaultRandom().primaryKey(),

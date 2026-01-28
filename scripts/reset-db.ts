@@ -1,6 +1,5 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Client } from "pg";
 import * as dotenv from "dotenv";
+import { Client } from "pg";
 
 dotenv.config();
 
@@ -10,7 +9,6 @@ const client = new Client({
 
 async function main() {
     await client.connect();
-    const db = drizzle(client);
 
     console.log("Dropping schemas...");
     await client.query(`DROP SCHEMA IF EXISTS "los" CASCADE;`);

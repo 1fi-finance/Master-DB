@@ -1,14 +1,13 @@
 import {
-    serial,
     integer,
     uuid,
     varchar,
     text,
     timestamp,
     decimal,
-    jsonb,
     index
 } from "drizzle-orm/pg-core";
+
 import { merchantSchema } from "../../definitions";
 import { settlementStatusEnum } from "../../enums";
 import { merchants as merchantsTable } from "../merchants/merchants";

@@ -1,5 +1,4 @@
 import {
-    serial,
     integer,
     uuid,
     varchar,
@@ -8,12 +7,12 @@ import {
     boolean,
     decimal,
     jsonb,
-    index,
-    pgTable
+    index
 } from "drizzle-orm/pg-core";
+
+import { merchantCategoriesTable } from "./categories";
 import { merchantSchema } from "../../definitions";
 import { merchants } from "../../merchant/merchants/merchants";
-import { merchantCategoriesTable } from "./categories";
 
 // Products - Merchant product catalog
 export const productsTable = merchantSchema.table("products", {

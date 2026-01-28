@@ -1,4 +1,5 @@
-import { serial, varchar, integer, timestamp, boolean, pgSchema, uuid, jsonb } from "drizzle-orm/pg-core";
+import { serial, timestamp, uuid, jsonb } from "drizzle-orm/pg-core";
+
 import { usersSchema } from "../definitions";
 import { usersTable } from "./index";
 

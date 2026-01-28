@@ -8,7 +8,7 @@
  * Usage: npm run docs:lms:publish
  */
 
-import { readFileSync, readdirSync, existsSync, statSync } from 'fs';
+import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join } from 'path';
 
 interface MarkdownSection {
@@ -22,7 +22,7 @@ interface MarkdownSection {
 
 interface NotionBlock {
   type: string;
-  content: any;
+  content: Record<string, unknown>;
 }
 
 const DOCS_DIR = join(process.cwd(), 'docs', 'lms-schema');
@@ -127,7 +127,7 @@ function parseMarkdown(content: string): MarkdownSection[] {
         currentTable = [];
       }
 
-      const item = listMatch ? listMatch[1] : numberedListMatch![1];
+      const item = listMatch ? listMatch[1] : (numberedListMatch?.[1] || '');
       currentList.push(item);
       continue;
     }
@@ -360,7 +360,7 @@ function buildNotionPageStructure() {
     parent: PARENT_PAGE_ID,
     icon: '📊',
     cover: null,
-    blocks: [] as any[]
+    blocks: [] as Record<string, unknown>[]
   };
 
   // Add main title and description
@@ -440,7 +440,7 @@ function buildNotionPageStructure() {
   ];
 
   modules.forEach(module => {
-    if (module.files.length === 0) return;
+    if (module.files.length === 0) { return; }
 
     // Add toggle for the module
     const children = [];
@@ -465,7 +465,7 @@ function buildNotionPageStructure() {
     // Process each file in the module
     module.files.forEach(file => {
       const content = readMarkdownFile(file);
-      if (!content) return;
+      if (!content) { return; }
 
       const sections = parseMarkdown(content);
       sections.forEach(section => {
@@ -487,7 +487,6 @@ function buildNotionPageStructure() {
   });
 
   // Add ERD diagrams section (before relationships and enums)
-  const erdFiles = listERDDiagrams();
   const erdMarkdownFiles = markdownFiles.filter(f => f.startsWith('erds/'));
 
   if (erdMarkdownFiles.length > 0) {
@@ -503,7 +502,7 @@ function buildNotionPageStructure() {
 
     erdMarkdownFiles.forEach(file => {
       const content = readMarkdownFile(file);
-      if (!content) return;
+      if (!content) { return; }
 
       const sections = parseMarkdown(content);
       sections.forEach(section => {

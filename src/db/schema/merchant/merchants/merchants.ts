@@ -1,5 +1,6 @@
-import { merchantSchema } from "../../definitions";
 import { uuid, varchar, text, timestamp, decimal, integer, boolean, jsonb, index } from "drizzle-orm/pg-core";
+
+import { merchantSchema } from "../../definitions";
 import { storeTypeEnum } from "../../enums";
 
 export const merchants = merchantSchema.table("merchants", {

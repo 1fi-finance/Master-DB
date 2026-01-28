@@ -1,4 +1,5 @@
-import { serial, integer, varchar, decimal, boolean, timestamp, index, jsonb, text, uuid } from "drizzle-orm/pg-core";
+import { varchar, decimal, boolean, timestamp, index, jsonb, text, uuid } from "drizzle-orm/pg-core";
+
 import { mutualFundTypeEnum } from "../enums";
 import { loanApplicationsTable } from "./applications";
 import { losSchema } from "../definitions";

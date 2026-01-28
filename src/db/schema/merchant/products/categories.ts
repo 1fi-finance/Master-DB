@@ -1,5 +1,4 @@
 import {
-    serial,
     integer,
     varchar,
     text,
@@ -9,6 +8,7 @@ import {
     index,
     uuid
 } from "drizzle-orm/pg-core";
+
 import { merchantSchema } from "../../definitions";
 
 // Merchant Categories - Merchant-specific category trees

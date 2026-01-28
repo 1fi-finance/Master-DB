@@ -1,6 +1,7 @@
-import { serial, integer, varchar, jsonb, date, text, boolean, timestamp, index, uuid } from "drizzle-orm/pg-core";
-import { usersTable } from "../users";
+import { serial, varchar, jsonb, date, text, boolean, timestamp, index, uuid } from "drizzle-orm/pg-core";
+
 import { losSchema } from "../definitions";
+import { usersTable } from "../users";
 
 export const kycVerificationTable = losSchema.table("kyc_verification", {
     id: serial().primaryKey(),

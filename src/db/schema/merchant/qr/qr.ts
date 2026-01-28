@@ -1,8 +1,9 @@
-import { merchantSchema } from "../../definitions";
 import { serial, uuid, varchar, text, timestamp, boolean, decimal, } from "drizzle-orm/pg-core";
+
+import { merchantSchema } from "../../definitions";
+import { JourneyType } from "../../enums";
 import { merchants } from "../merchants/merchants";
 import { productsTable } from "../products/products";
-import { JourneyType } from "../../enums";
 
 
 export const qrTable = merchantSchema.table("qrTable", {

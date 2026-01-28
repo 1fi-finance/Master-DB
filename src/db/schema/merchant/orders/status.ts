@@ -1,6 +1,4 @@
 import {
-    serial,
-    integer,
     uuid,
     varchar,
     text,
@@ -8,8 +6,9 @@ import {
     jsonb,
     index
 } from "drizzle-orm/pg-core";
-import { merchantSchema } from "../../definitions";
+
 import { ordersTable } from "./orders";
+import { merchantSchema } from "../../definitions";
 
 // Order Status History - Complete status audit trail
 export const orderStatusHistoryTable = merchantSchema.table("order_status_history", {

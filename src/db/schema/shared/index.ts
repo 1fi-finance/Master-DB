@@ -1,5 +1,6 @@
+import { uuid, varchar, timestamp } from "drizzle-orm/pg-core";
+
 import { sharedSchema } from "../definitions";
-import { uuid, varchar, text, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { productsTable, productVariantsTable } from "../merchant/products/products";
 
 export const sessionJourney = sharedSchema.table("session_journey", {

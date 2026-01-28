@@ -1,4 +1,5 @@
-import { serial, integer, varchar, decimal, text, timestamp, index, uuid } from "drizzle-orm/pg-core";
+import { integer, varchar, decimal, text, timestamp, index, uuid } from "drizzle-orm/pg-core";
+
 import { loanApplicationStatusEnum } from "../enums";
 import { usersTable } from "../users";
 import { loanProductsTable } from "./products";

@@ -1,6 +1,7 @@
-import { serial, integer, date, decimal, varchar, text, timestamp, index } from "drizzle-orm/pg-core";
-import { accrualStatusEnum } from "../../enums";
+import { serial, integer, date, decimal, text, timestamp, index } from "drizzle-orm/pg-core";
+
 import { lmsSchema } from "../../definitions";
+import { accrualStatusEnum } from "../../enums";
 
 export const accrualRunLogTable = lmsSchema.table("accrual_run_log", {
     id: serial().primaryKey(),

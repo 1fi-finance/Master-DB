@@ -1,5 +1,4 @@
-import { merchantSchema } from "../definitions";
-import { serial, varchar, text, timestamp } from "drizzle-orm/pg-core";
+
 
 export * from "./merchants";
 export * from "./products/index";

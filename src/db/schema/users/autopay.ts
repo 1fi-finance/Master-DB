@@ -1,4 +1,5 @@
 import { serial, varchar, timestamp, jsonb, text, index, uuid, decimal } from "drizzle-orm/pg-core";
+
 import { usersSchema } from "../definitions";
 import { usersTable } from "./index";
 

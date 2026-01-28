@@ -1,7 +1,8 @@
-import { serial, integer, varchar, decimal, timestamp, boolean, index, uuid } from "drizzle-orm/pg-core";
+import { integer, varchar, decimal, timestamp, boolean, index, uuid } from "drizzle-orm/pg-core";
+
 import { loanApplicationsTable } from "./applications";
-import { usersTable } from "../users";
 import { losSchema } from "../definitions";
+import { usersTable } from "../users";
 
 export const loanSanctionTable = losSchema.table("loan_sanction", {
     id: uuid().defaultRandom().primaryKey(),

@@ -2,17 +2,16 @@ import {
     serial,
     uuid,
     varchar,
-    text,
     timestamp,
     boolean,
     decimal,
     integer,
-    jsonb,
     index
 } from "drizzle-orm/pg-core";
+
 import { merchantSchema } from "../definitions";
-import { merchantStatusEnum, storeTypeEnum } from "../enums";
-import { merchants, merchantKYC, merchantStoresTable } from "./merchants/merchants";
+import { merchants } from "./merchants/merchants";
+
 
 export { merchants, merchantKYC, merchantStoresTable } from "./merchants/merchants";
 
