@@ -1,0 +1,188 @@
+# Template for Dependent Repositories
+# Copy this file to: .github/workflows/update-master-db-submodule.yml
+# This workflow listens for updates from Master-DB and creates a PR
+
+name: Update Master-DB Submodule
+
+on:
+  repository_dispatch:
+    types: [submodule-updated]
+  workflow_dispatch: # Allow manual triggering
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  SUBMODULE_PATH: Master-DB  # Path to the submodule, adjust if needed
+
+jobs:
+  update-submodule:
+    name: Update Submodule & Create PR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Extract event data
+        id: event-data
+        run: |
+          echo "sha=${{ github.event.client_payload.sha }}" >> $GITHUB_OUTPUT
+          echo "branch=${{ github.event.client_payload.branch }}" >> $GITHUB_OUTPUT
+          echo "message=${{ github.event.client_payload.commit_message }}" >> $GITHUB_OUTPUT
+          echo "committer=${{ github.event.client_payload.committer }}" >> $GITHUB_OUTPUT
+          echo "timestamp=${{ github.event.client_payload.timestamp }}" >> $GITHUB_OUTPUT
+
+      - name: Update submodule reference
+        run: |
+          echo "Updating Master-DB submodule..."
+          echo "Event SHA: ${{ steps.event-data.outputs.sha }}"
+
+          # Update submodule to the new commit
+          git submodule update --remote ${{ env.SUBMODULE_PATH }}
+          git submodule sync ${{ env.SUBMODULE_PATH }}
+
+          # Show what changed
+          git status
+          git diff ${{ env.SUBMODULE_PATH }}
+
+      - name: Check if submodule changed
+        id: check-changes
+        run: |
+          if git diff --quiet ${{ env.SUBMODULE_PATH }}; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No changes detected in submodule"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Submodule has changes"
+          fi
+
+      - name: Create feature branch
+        if: steps.check-changes.outputs.changed == 'true'
+        run: |
+          BRANCH_NAME="update/master-db-${{ steps.event-data.outputs.sha }}"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
+
+          # Create and checkout new branch
+          git checkout -b "$BRANCH_NAME"
+          echo "Created branch: $BRANCH_NAME"
+
+      - name: Commit submodule update
+        if: steps.check-changes.outputs.changed == 'true'
+        run: |
+          BRANCH_NAME="${{ env.branch_name }}"
+          MASTER_DB_SHA="${{ steps.event-data.outputs.sha }}"
+          COMMITTER="${{ steps.event-data.outputs.committer }}"
+          MESSAGE="${{ steps.event-data.outputs.message }}"
+
+          # Commit the submodule update
+          git add ${{ env.SUBMODULE_PATH }}
+          git commit -m "chore: update Master-DB submodule
+
+          Updated Master-DB to commit $MASTER_DB_SHA
+          Commit message: $MESSAGE
+          Updated by: $COMMITTER
+
+          Auto-generated from: https://github.com/1fi-finance/Master-DB/commit/$MASTER_DB_SHA"
+
+          echo "Commit created successfully"
+
+      - name: Push branch
+        if: steps.check-changes.outputs.changed == 'true'
+        run: |
+          git push origin "${{ env.branch_name }}"
+          echo "Branch pushed successfully"
+
+      - name: Create Pull Request
+        if: steps.check-changes.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: "${{ env.branch_name }}"
+          title: "chore: update Master-DB submodule"
+          body: |
+            ## 🔄 Master-DB Submodule Update
+
+            This PR updates the Master-DB submodule to the latest commit.
+
+            ### 📦 Update Details
+
+            - **Commit**: `${{ steps.event-data.outputs.sha }}`
+            - **Updated by**: ${{ steps.event-data.outputs.committer }}
+            - **Original Message**: ${{ steps.event-data.outputs.message }}
+            - **Updated at**: ${{ steps.event-data.outputs.timestamp }}
+
+            ### 🔗 Links
+
+            - **View commit**: https://github.com/1fi-finance/Master-DB/commit/${{ steps.event-data.outputs.sha }}
+            - **Compare changes**: https://github.com/1fi-finance/Master-DB/compare/${{ steps.event-data.outputs.branch }}
+
+            ### ⚠️ Review Checklist
+
+            Before merging, please verify:
+
+            - [ ] Review the schema changes in Master-DB
+            - [ ] Check for any breaking changes
+            - [ ] Ensure application is compatible with new schema
+            - [ ] Run tests locally with updated submodule
+            - [ ] Check migration files if any
+
+            ### 📝 Additional Notes
+
+            This PR was automatically created when Master-DB was updated.
+            The submodule pointer has been updated to incorporate the latest changes.
+
+            <details>
+            <summary>Technical Details</summary>
+
+            - **Event Type**: repository_dispatch
+            - **Event Source**: 1fi-finance/Master-DB
+            - **Submodule Path**: ${{ env.SUBMODULE_PATH }}
+            - **Branch Created**: `${{ env.branch_name }}`
+
+            </details>
+
+          labels: |
+            dependencies
+            automated-pr
+            submodule-update
+
+          draft: false
+
+      - name: PR already exists
+        if: steps.check-changes.outputs.changed == 'true'
+        run: |
+          echo "PR created successfully!"
+          echo ""
+          echo "Note: If a PR for this commit already exists, the create-pull-request action"
+          echo "will update it instead of creating a duplicate."
+
+      - name: No changes detected
+        if: steps.check-changes.outputs.changed == 'false'
+        run: |
+          echo "ℹ️ Submodule is already up to date"
+          echo "No PR was created as there were no changes to apply"
+
+  notify-team:
+    name: Notify Team (Optional)
+    needs: update-submodule
+    if: always() && steps.check-changes.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    # Remove this job or add your notification method
+    steps:
+      - name: Workflow summary
+        run: |
+          echo "## Submodule Update Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Submodule updated successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "1. Review the created PR" >> $GITHUB_STEP_SUMMARY
+          echo "2. Test your application with the new schema" >> $GITHUB_STEP_SUMMARY
+          echo "3. Merge the PR when ready" >> $GITHUB_STEP_SUMMARY
