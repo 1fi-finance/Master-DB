@@ -5,11 +5,22 @@
     "pg": "^8.17.2"
   },
   "devDependencies": {
+    "@types/node": "^25.0.10",
     "@types/pg": "^8.16.0",
     "drizzle-kit": "^0.31.8",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   },
   "scripts": {
-    "docs:lms:publish": "tsx scripts/publish-lms-docs-to-notion.ts"
+    "docs:lms:publish": "tsx scripts/publish-lms-docs-to-notion.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:drop": "drizzle-kit drop",
+    "test:schema": "tsx scripts/test-schema-load.ts",
+    "test:workflows": "bash scripts/validate-workflows.sh",
+    "test:notifications": "bash scripts/test-notifications.sh",
+    "typecheck": "tsc --noEmit"
   }
 }

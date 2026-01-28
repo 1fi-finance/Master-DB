@@ -1,0 +1,326 @@
+name: Submodule Update Notifier
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'Commit SHA to update to (defaults to latest)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  repository-projects: read
+
+jobs:
+  discover-and-dispatch:
+    name: Discover Dependent Repos and Dispatch Updates
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    outputs:
+      repos-found: ${{ steps.discover.outputs.repos-found }}
+      repos-updated: ${{ steps.dispatch.outputs.repos-updated }}
+      repos-failed: ${{ steps.dispatch.outputs.repos-failed }}
+      success-count: ${{ steps.dispatch.outputs.success-count }}
+      failure-count: ${{ steps.dispatch.outputs.failure-count }}
+
+    steps:
+      - name: Checkout Master-DB
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.SUBMODULE_UPDATE_PAT }}
+
+      - name: Discover dependent repositories
+        id: discover
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.SUBMODULE_UPDATE_PAT }}
+          script: |
+            const org = '1fi-finance';
+            const submoduleUrl = 'https://github.com/1fi-finance/Master-DB.git';
+            const repos = [];
+            let page = 1;
+            const perPage = 100;
+
+            core.info(`Searching for repositories in ${org} organization...`);
+
+            // Paginate through all repositories in the organization
+            while (true) {
+              const query = `org:${org} archived:false`;
+              const result = await github.rest.search.code({
+                q: query,
+                page: page,
+                per_page: perPage
+              });
+
+              if (result.data.items.length === 0) break;
+
+              for (const item of result.data.items) {
+                try {
+                  // Get .gitmodules file to check if Master-DB is a submodule
+                  const gitmodulesResponse = await github.rest.repos.getContent({
+                    owner: org,
+                    repo: item.repository.name,
+                    path: '.gitmodules',
+                  });
+
+                  if (gitmodulesResponse.status === 200) {
+                    const content = Buffer.from(gitmodulesResponse.data.content, 'base64').toString();
+                    if (content.includes('Master-DB') || content.includes(submoduleUrl)) {
+                      repos.push(item.repository.name);
+                      core.info(`✓ Found Master-DB as submodule in ${item.repository.name}`);
+                    }
+                  }
+                } catch (error) {
+                  if (error.status !== 404) {
+                    core.warning(`Error checking ${item.repository.name}: ${error.message}`);
+                  }
+                }
+              }
+
+              // Check if we've retrieved all items
+              if (result.data.items.length < perPage) break;
+              page++;
+            }
+
+            core.info(`Total repositories with Master-DB submodule: ${repos.length}`);
+
+            // Set outputs
+            core.setOutput('repos-found', JSON.stringify(repos));
+            core.saveState('dependent-repos', repos);
+
+            // Return for next step
+            return repos;
+
+      - name: Display discovered repositories
+        run: |
+          REPOS="${{ steps.discover.outputs.repos-found }}"
+          echo "Found $(echo "$REPOS" | jq 'length') dependent repositories:"
+          echo "$REPOS" | jq -r '.[]' | sed 's/^/  - /'
+
+      - name: Trigger updates in parallel
+        id: dispatch
+        uses: nick-fields/retry-action@v2
+        with:
+          timeout_minutes: 45
+          max_attempts: 3
+          retry_on: error
+          command: |
+            #!/bin/bash
+            set -e
+
+            REPOS_JSON='${{ steps.discover.outputs.repos-found }}'
+            REPOS_ARRAY=($(echo "$REPOS_JSON" | jq -r '.[]'))
+
+            SUCCESS_REPOS=()
+            FAILED_REPOS=()
+
+            for repo in "${REPOS_ARRAY[@]}"; do
+              echo "Dispatching to $repo..."
+
+              RESPONSE=$(curl -s -X POST \
+                -H "Accept: application/vnd.github.v3+json" \
+                -H "Authorization: token ${{ secrets.SUBMODULE_UPDATE_PAT }}" \
+                "https://api.github.com/repos/1fi-finance/$repo/dispatches" \
+                -d "{
+                  \"event_type\": \"submodule-updated\",
+                  \"client_payload\": {
+                    \"sha\": \"${{ github.sha }}\",
+                    \"branch\": \"main\",
+                    \"timestamp\": \"$(date -u +%Y%m%d%H%M%S)\",
+                    \"commit_message\": \"${{ github.event.head_commit.message }}\",
+                    \"committer\": \"${{ github.event.head_commit.author.name }}\"
+                  }
+                }")
+
+              if echo "$RESPONSE" | grep -q '"accepted"'; then
+                echo "✓ Successfully dispatched to $repo"
+                SUCCESS_REPOS+=("$repo")
+              else
+                echo "✗ Failed to dispatch to $repo"
+                echo "Response: $RESPONSE"
+                FAILED_REPOS+=("$repo")
+              fi
+            done
+
+            # Set outputs
+            echo "repos-updated=$(printf '%s\n' "${SUCCESS_REPOS[@]}" | jq -R . | jq -s -c .)" >> $GITHUB_OUTPUT
+            echo "repos-failed=$(printf '%s\n' "${FAILED_REPOS[@]}" | jq -R . | jq -s -c .)" >> $GITHUB_OUTPUT
+            echo "success-count=${#SUCCESS_REPOS[@]}" >> $GITHUB_OUTPUT
+            echo "failure-count=${#FAILED_REPOS[@]}" >> $GITHUB_OUTPUT
+
+      - name: Display dispatch results
+        run: |
+          SUCCESS_COUNT="${{ steps.dispatch.outputs.success-count }}"
+          FAILURE_COUNT="${{ steps.dispatch.outputs.failure-count }}"
+
+          echo "### Dispatch Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Successfully dispatched to: **$SUCCESS_COUNT** repositories" >> $GITHUB_STEP_SUMMARY
+          echo "❌ Failed to dispatch to: **$FAILURE_COUNT** repositories" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$FAILURE_COUNT" -gt 0 ]; then
+            echo "**Failed repositories:**" >> $GITHUB_STEP_SUMMARY
+            echo '${{ steps.dispatch.outputs.repos-failed }}' | jq -r '.[]' | sed 's/^/- `&`/' >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Send Slack notification
+        if: always()
+        uses: slackapi/slack-github-action@v1
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        with:
+          payload: |
+            {
+              "text": "Master-DB Submodule Update Dispatch",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "🔄 Master-DB Submodule Update"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit:*\n<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Author:*\n${{ github.event.head_commit.author.name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Status:*\n${{ steps.dispatch.outputs.success-count }} dispatched\n${{ steps.dispatch.outputs.failure-count }} failed"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Workflow:*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View>"
+                    }
+                  ]
+                },
+                {
+                  "type": "context",
+                  "elements": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "📦 Master-DB repository update triggered at <!date^${{ github.event.head_commit.timestamp }}^{date_num} {time_secs}|"
+                    }
+                  ]
+                }
+              ]
+            }
+
+      - name: Send Discord notification
+        if: always()
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [ -n "$DISCORD_WEBHOOK_URL" ]; then
+            SUCCESS_COUNT="${{ steps.dispatch.outputs.success-count }}"
+            FAILURE_COUNT="${{ steps.dispatch.outputs.failure-count }}"
+            COMMIT_URL="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+            WORKFLOW_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+            curl -X POST "$DISCORD_WEBHOOK_URL" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"content\": \"\",
+                \"embeds\": [{
+                  \"title\": \"🔄 Master-DB Submodule Update\",
+                  \"color\": $([ $FAILURE_COUNT -eq 0 ] && echo 3066993 || echo 15158332),
+                  \"fields\": [
+                    {\"name\": \"Commit\", \"value\": \"[$COMMIT_SHA]($COMMIT_URL)\", \"inline\": true},
+                    {\"name\": \"Author\", \"value\": \"${{ github.event.head_commit.author.name }}\", \"inline\": true},
+                    {\"name\": \"Dispatched\", \"value\": \"$SUCCESS_COUNT repos\", \"inline\": true},
+                    {\"name\": \"Failed\", \"value\": \"$FAILURE_COUNT repos\", \"inline\": true}
+                  ],
+                  \"url\": \"$WORKFLOW_URL\"
+                }]
+              }"
+          fi
+
+      - name: Send email notification
+        if: always()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "Master-DB Submodule Update - ${{ steps.dispatch.outputs.success-count }} dispatched, ${{ steps.dispatch.outputs.failure-count }} failed"
+          to: ${{ secrets.EMAIL_RECIPIENTS }}
+          from: GitHub Actions
+          body: |
+            Master-DB submodule update has been triggered.
+
+            Commit: ${{ github.sha }}
+            Author: ${{ github.event.head_commit.author.name }}
+            Message: ${{ github.event.head_commit.message }}
+
+            Summary:
+            - Successfully dispatched to: ${{ steps.dispatch.outputs.success-count }} repositories
+            - Failed to dispatch to: ${{ steps.dispatch.outputs.failure-count }} repositories
+
+            Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            ${{ steps.dispatch.outputs.failure-count > 0 && 'Failed repositories:\n' || '' }}
+            ${{ steps.dispatch.outputs.repos-failed }}
+          priority: high
+
+  create-summary-issue:
+    name: Create Summary Issue (if failures)
+    needs: discover-and-dispatch
+    if: needs.discover-and-dispatch.outputs.failure-count > 0
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Create issue for failed dispatches
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const failedRepos = JSON.parse('${{ needs.discover-and-dispatch.outputs.repos-failed }}');
+            const commitSha = '${{ github.sha }}';
+
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `⚠️ Submodule Update Dispatch Failed for ${failedRepos.length} Repositories`,
+              body: `## Failed Dispatches
+
+            The following repositories failed to receive the submodule update:
+
+            ${failedRepos.map(repo => `- **${repo}**`).join('\n')}
+
+            ## Details
+
+            - **Commit:** ${commitSha}
+            - **Workflow:** [View Run](${{ github.server_url }}/${context.repo.owner}/${context.repo.repo}/actions/runs/${{ github.run_id }})
+            - **Timestamp:** ${new Date().toISOString()}
+
+            ## Action Required
+
+            Please investigate why these repositories failed to receive the dispatch event.
+            Common reasons:
+            - Repository is archived
+            - Missing \`MASTER_DB_PAT\` secret
+            - Repository webhook is disabled
+            - Network/timeout issues
+
+            /label ~bug ~submodule-update-failed ~needs-attention
+            `,
+              labels: ['bug', 'submodule-update-failed', 'needs-attention']
+            });
+
+            core.info(`Created issue #${issue.data.number}`);

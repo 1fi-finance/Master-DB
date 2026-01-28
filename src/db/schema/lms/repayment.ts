@@ -1,13 +1,13 @@
-import { serial, integer, decimal, date, varchar, boolean, jsonb, timestamp, index } from "drizzle-orm/pg-core";
+import { serial, integer, decimal, date, varchar, boolean, jsonb, timestamp, index, uuid } from "drizzle-orm/pg-core";
 import { loanApplicationsTable } from "../los/applications";
 import { loanSanctionTable } from "../los/sanction";
 import { emiStatusEnum } from "../enums";
 import { lmsSchema } from "../definitions";
 
 export const emiScheduleTable = lmsSchema.table("emi_schedule", {
-    id: serial().primaryKey(),
-    loanApplicationId: integer().references(() => loanApplicationsTable.id).notNull(),
-    loanSanctionId: integer().references(() => loanSanctionTable.id).notNull(),
+    id: uuid().defaultRandom().primaryKey(),
+    loanApplicationId: uuid().references(() => loanApplicationsTable.id).notNull(),
+    loanSanctionId: uuid().references(() => loanSanctionTable.id).notNull(),
 
     // Schedule Details
     installmentNumber: integer().notNull(),
@@ -41,9 +41,9 @@ export const emiScheduleTable = lmsSchema.table("emi_schedule", {
 }));
 
 export const repaymentTable = lmsSchema.table("repayment", {
-    id: serial().primaryKey(),
-    loanApplicationId: integer().references(() => loanApplicationsTable.id).notNull(),
-    emiScheduleId: integer().references(() => emiScheduleTable.id),
+    id: uuid().defaultRandom().primaryKey(),
+    loanApplicationId: uuid().references(() => loanApplicationsTable.id).notNull(),
+    emiScheduleId: uuid().references(() => emiScheduleTable.id),
 
     // Payment Details
     paymentAmount: decimal({ precision: 15, scale: 2 }).notNull(),

@@ -1,13 +1,13 @@
-import { serial, integer, decimal, date, varchar, text, timestamp, index } from "drizzle-orm/pg-core";
+import { serial, integer, decimal, date, varchar, text, timestamp, index, uuid } from "drizzle-orm/pg-core";
 import { loanAccountTable } from "../account";
 import { feeMasterTable } from "./fee-master";
 import { feeStatusEnum } from "../../enums";
 import { lmsSchema } from "../../definitions";
 
 export const loanFeesTable = lmsSchema.table("loan_fees", {
-    id: serial().primaryKey(),
-    loanAccountId: integer().references(() => loanAccountTable.id).notNull(),
-    feeId: integer().references(() => feeMasterTable.id).notNull(),
+    id: uuid().defaultRandom().primaryKey(),
+    loanAccountId: uuid().references(() => loanAccountTable.id).notNull(),
+    feeId: uuid().references(() => feeMasterTable.id).notNull(),
 
     // Amount Details
     feeAmount: decimal({ precision: 15, scale: 2 }).notNull(),

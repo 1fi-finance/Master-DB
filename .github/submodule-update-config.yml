@@ -1,0 +1,132 @@
+# Submodule Update Configuration for Master-DB
+# This file controls how automated submodule updates are propagated to superprojects
+
+update_branch_prefix: "submodule-update"
+
+# PR Title and Body Templates
+# Available variables: {sha}, {short_sha}, {branch}, {timestamp}, {commit_message}
+pr_title_template: "chore: Update Master-DB submodule to {short_sha}"
+
+pr_body_template: |
+  ## Automated Submodule Update
+
+  This PR was automatically generated when Master-DB was updated.
+
+  ### Details
+  - **Commit:** [{short_sha}]({commit_url})
+  - **Branch:** {branch}
+  - **Updated:** {timestamp}
+  - **Author:** {committer}
+
+  ### Commit Message
+  ```
+  {commit_message}
+  ```
+
+  ### Validation Results
+  ✅ All tests passed
+  ✅ Database migrations verified
+  ✅ Build successful
+
+  ### Next Steps
+  - [ ] Review the changes in Master-DB
+  - [ ] Verify compatibility with your project
+  - [ ] Merge this PR to update the submodule
+
+  ---
+  *This PR was created by the [Submodule Update Automation]({workflow_url})*
+
+# Validation Settings
+validation:
+  # Require tests to pass before creating PR
+  required_tests: true
+
+  # Check database migrations using Drizzle
+  check_migrations: true
+
+  # Verify build compiles successfully
+  verify_build: true
+
+  # Maximum time to wait for validation (in minutes)
+  timeout_minutes: 30
+
+  # Command to run tests (can be overridden in superproject)
+  test_command: "npm test"
+
+  # Command to check migrations
+  migration_check_command: "npm run db:check"
+
+# Notification Settings
+notifications:
+  slack:
+    enabled: true
+    channels:
+      - "#engineering"
+      - "#db-updates"
+    mention_on_failure: true
+
+  discord:
+    enabled: true
+    webhook_url_secret: "DISCORD_WEBHOOK_URL"
+
+  email:
+    enabled: true
+    recipients:
+      - "dev-team@1fi-finance.com"
+    # Send summary email even if all updates succeed
+    always_send_summary: false
+
+  # Create GitHub issues for failures
+  create_issues: true
+  # Create summary issues for successful updates
+  create_summary_issues: false
+
+# Repository Discovery Settings
+discovery:
+  # Organization to search for dependent repositories
+  organization: "1fi-finance"
+
+  # Skip archived repositories
+  skip_archived: true
+
+  # Skip specific repositories (add repository names)
+  skip_repos:
+    # - "example-repo-to-skip"
+
+  # Only include specific repositories (if set, acts as allowlist)
+  # If empty, all repos with Master-DB as submodule are included
+  only_repos: []
+
+# Dispatch Settings
+dispatch:
+  # Event type to send to superprojects
+  event_type: "submodule-updated"
+
+  # Maximum number of repositories to update in parallel
+  parallel_limit: 10
+
+  # Retry settings for failed dispatches
+  retry_attempts: 3
+  retry_delay_seconds: 5
+
+# Rollback Settings
+rollback:
+  # If a PR fails validation, automatically close it
+  auto_close_failed_prs: true
+
+  # Number of days to keep old update branches before cleanup
+  branch_retention_days: 30
+
+# Monitoring & Metrics
+monitoring:
+  # Track success rate of updates
+  track_success_rate: true
+
+  # Alert if success rate drops below this threshold (0-100)
+  success_rate_threshold: 80
+
+  # Track average workflow duration
+  track_duration: true
+
+  # Alert if workflow takes longer than this (minutes)
+  duration_threshold: 15

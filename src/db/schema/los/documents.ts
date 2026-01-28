@@ -5,8 +5,8 @@ import { usersTable } from "../users";
 import { losSchema } from "../definitions";
 
 export const documentsTable = losSchema.table("documents", {
-    id: serial().primaryKey(),
-    loanApplicationId: integer().references(() => loanApplicationsTable.id).notNull(),
+    id: uuid().defaultRandom().primaryKey(),
+    loanApplicationId: uuid().references(() => loanApplicationsTable.id).notNull(),
     documentType: documentTypeEnum().notNull(),
     documentUrl: varchar({ length: 500 }).notNull(),
     fileName: varchar({ length: 255 }).notNull(),

@@ -17,9 +17,9 @@ import { merchantCategoriesTable } from "./categories";
 
 // Products - Merchant product catalog
 export const productsTable = merchantSchema.table("products", {
-    id: serial().primaryKey(),
+    id: uuid().primaryKey(),
     merchantId: uuid().references(() => merchants.id, { onDelete: "cascade" }).notNull(),
-    categoryId: integer().references(() => merchantCategoriesTable.id),
+    categoryId: uuid().references(() => merchantCategoriesTable.id),
 
     // Product Identity
     name: varchar({ length: 255 }).notNull(),
@@ -92,8 +92,8 @@ export const productsTable = merchantSchema.table("products", {
 
 // Product Variants - For size, color, etc.
 export const productVariantsTable = merchantSchema.table("product_variants", {
-    id: serial().primaryKey(),
-    productId: integer().references(() => productsTable.id, { onDelete: "cascade" }).notNull(),
+    id: uuid().defaultRandom().primaryKey(),
+    productId: uuid().references(() => productsTable.id, { onDelete: "cascade" }).notNull(),
 
     // Variant Identity
     variantSku: varchar({ length: 100 }).notNull(),
@@ -135,7 +135,7 @@ export const productVariantsTable = merchantSchema.table("product_variants", {
 
 // Product Bundles - Product + Service bundles
 export const productBundlesTable = merchantSchema.table("product_bundles", {
-    id: serial().primaryKey(),
+    id: uuid().defaultRandom().primaryKey(),
     merchantId: uuid().references(() => merchants.id, { onDelete: "cascade" }).notNull(),
 
     name: varchar({ length: 255 }).notNull(),
@@ -172,10 +172,10 @@ export const productBundlesTable = merchantSchema.table("product_bundles", {
 
 // Channel-Specific Pricing - Omnichannel pricing support
 export const productChannelPricingTable = merchantSchema.table("product_channel_pricing", {
-    id: serial().primaryKey(),
-    productId: integer().references(() => productsTable.id, { onDelete: "cascade" }),
-    productVariantId: integer().references(() => productVariantsTable.id, { onDelete: "cascade" }),
-    bundleId: integer().references(() => productBundlesTable.id, { onDelete: "cascade" }),
+    id: uuid().defaultRandom().primaryKey(),
+    productId: uuid().references(() => productsTable.id, { onDelete: "cascade" }),
+    productVariantId: uuid().references(() => productVariantsTable.id, { onDelete: "cascade" }),
+    bundleId: uuid().references(() => productBundlesTable.id, { onDelete: "cascade" }),
 
     // Channel Type
     channel: varchar({ length: 20 }).notNull(), // online, offline, pos

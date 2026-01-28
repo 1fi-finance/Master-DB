@@ -18,7 +18,7 @@ import { usersTable } from "../../users/index";
 
 // Orders - Master order table
 export const ordersTable = merchantSchema.table("orders", {
-    id: serial().primaryKey(),
+    id: uuid().defaultRandom().primaryKey(),
 
     // Order Number
     orderNumber: varchar({ length: 50 }).unique().notNull(),
@@ -84,7 +84,7 @@ export const ordersTable = merchantSchema.table("orders", {
     utmCampaign: varchar({ length: 255 }),
 
     // Financing
-    loanApplicationId: integer(), // Link to los.loan_applications if financed
+    loanApplicationId: uuid(), // Link to los.loan_applications if financed
 
     createdAt: timestamp().notNull().defaultNow(),
     updatedAt: timestamp().notNull().defaultNow()
@@ -103,13 +103,13 @@ export const ordersTable = merchantSchema.table("orders", {
 
 // Order Items - Line items
 export const orderItemsTable = merchantSchema.table("order_items", {
-    id: serial().primaryKey(),
-    orderId: integer().references(() => ordersTable.id, { onDelete: "cascade" }).notNull(),
+    id: uuid().primaryKey(),
+    orderId: uuid().references(() => ordersTable.id, { onDelete: "cascade" }).notNull(),
 
     // Product Reference
-    productId: integer().notNull(),
-    productVariantId: integer(),
-    bundleId: integer(),
+    productId: uuid().notNull(),
+    productVariantId: uuid(),
+    bundleId: uuid(),
 
     // Product Details (snapshot at time of order)
     productName: varchar({ length: 255 }).notNull(),

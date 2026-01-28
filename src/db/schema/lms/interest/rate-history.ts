@@ -1,10 +1,10 @@
-import { serial, integer, decimal, date, varchar, text, timestamp, index } from "drizzle-orm/pg-core";
+import { serial, integer, decimal, date, varchar, text, timestamp, index, uuid } from "drizzle-orm/pg-core";
 import { loanAccountTable } from "../account";
 import { lmsSchema } from "../../definitions";
 
 export const interestRateHistoryTable = lmsSchema.table("interest_rate_history", {
-    id: serial().primaryKey(),
-    loanAccountId: integer().references(() => loanAccountTable.id).notNull(),
+    id: uuid().defaultRandom().primaryKey(),
+    loanAccountId: uuid().references(() => loanAccountTable.id).notNull(),
 
     // Rate Change Details
     effectiveDate: date().notNull(),

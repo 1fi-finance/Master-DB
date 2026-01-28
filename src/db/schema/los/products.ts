@@ -1,9 +1,9 @@
-import { serial, varchar, text, decimal, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { uuid, serial, varchar, text, decimal, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { mutualFundTypeEnum } from "../enums";
 import { losSchema } from "../definitions";
 
 export const loanProductsTable = losSchema.table("loan_products", {
-    id: serial().primaryKey(),
+    id: uuid().defaultRandom().primaryKey(),
     name: varchar({ length: 255 }).notNull(),
     code: varchar({ length: 50 }).notNull().unique(),
     description: text(),
@@ -20,8 +20,8 @@ export const loanProductsTable = losSchema.table("loan_products", {
 });
 
 export const ltvConfigTable = losSchema.table("ltv_config", {
-    id: serial().primaryKey(),
-    loanProductId: integer().references(() => loanProductsTable.id).notNull(),
+    id: uuid().primaryKey(),
+    loanProductId: uuid().references(() => loanProductsTable.id).notNull(),
     mutualFundType: mutualFundTypeEnum().notNull(),
     ltvRatio: decimal({ precision: 5, scale: 2 }).notNull(),
     minCollateralValue: decimal({ precision: 15, scale: 2 }).notNull(),

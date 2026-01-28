@@ -4,6 +4,8 @@ CREATE SCHEMA "los";
 --> statement-breakpoint
 CREATE SCHEMA "merchant";
 --> statement-breakpoint
+CREATE SCHEMA "shared";
+--> statement-breakpoint
 CREATE SCHEMA "users";
 --> statement-breakpoint
 CREATE TYPE "public"."journey" AS ENUM('basic', 'productBased', 'variantBased');--> statement-breakpoint
@@ -36,6 +38,34 @@ CREATE TYPE "public"."restructuring_type" AS ENUM('tenure_extension', 'interest_
 CREATE TYPE "public"."settlement_status" AS ENUM('pending', 'processing', 'completed', 'failed', 'cancelled');--> statement-breakpoint
 CREATE TYPE "public"."store_type" AS ENUM('physical', 'online', 'hybrid', 'warehouse', 'pop_up');--> statement-breakpoint
 CREATE TYPE "public"."user_status" AS ENUM('pending', 'active', 'suspended', 'blocked', 'inactive');--> statement-breakpoint
+CREATE TABLE "los"."loan_products" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"name" varchar(255) NOT NULL,
+	"code" varchar(50) NOT NULL,
+	"description" text,
+	"minLoanAmount" numeric(15, 2) NOT NULL,
+	"maxLoanAmount" numeric(15, 2) NOT NULL,
+	"minTenureMonths" integer NOT NULL,
+	"maxTenureMonths" integer NOT NULL,
+	"baseInterestRate" numeric(8, 4) NOT NULL,
+	"processingFeePercent" numeric(8, 4) NOT NULL,
+	"prepaymentFeePercent" numeric(8, 4) DEFAULT '0' NOT NULL,
+	"isActive" boolean DEFAULT true NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "loan_products_code_unique" UNIQUE("code")
+);
+--> statement-breakpoint
+CREATE TABLE "los"."ltv_config" (
+	"id" uuid PRIMARY KEY NOT NULL,
+	"loanProductId" uuid NOT NULL,
+	"mutualFundType" "mutual_fund_type" NOT NULL,
+	"ltvRatio" numeric(5, 2) NOT NULL,
+	"minCollateralValue" numeric(15, 2) NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "users"."users" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"fullName" varchar(255) NOT NULL,
@@ -131,38 +161,10 @@ CREATE TABLE "users"."autopay" (
 	CONSTRAINT "autopay_subscriptionId_unique" UNIQUE("subscriptionId")
 );
 --> statement-breakpoint
-CREATE TABLE "los"."loan_products" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"name" varchar(255) NOT NULL,
-	"code" varchar(50) NOT NULL,
-	"description" text,
-	"minLoanAmount" numeric(15, 2) NOT NULL,
-	"maxLoanAmount" numeric(15, 2) NOT NULL,
-	"minTenureMonths" integer NOT NULL,
-	"maxTenureMonths" integer NOT NULL,
-	"baseInterestRate" numeric(8, 4) NOT NULL,
-	"processingFeePercent" numeric(8, 4) NOT NULL,
-	"prepaymentFeePercent" numeric(8, 4) DEFAULT '0' NOT NULL,
-	"isActive" boolean DEFAULT true NOT NULL,
-	"createdAt" timestamp DEFAULT now() NOT NULL,
-	"updatedAt" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "loan_products_code_unique" UNIQUE("code")
-);
---> statement-breakpoint
-CREATE TABLE "los"."ltv_config" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"loanProductId" integer NOT NULL,
-	"mutualFundType" "mutual_fund_type" NOT NULL,
-	"ltvRatio" numeric(5, 2) NOT NULL,
-	"minCollateralValue" numeric(15, 2) NOT NULL,
-	"createdAt" timestamp DEFAULT now() NOT NULL,
-	"updatedAt" timestamp DEFAULT now() NOT NULL
-);
---> statement-breakpoint
 CREATE TABLE "los"."loan_applications" (
-	"id" serial PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
 	"userId" uuid NOT NULL,
-	"loanProductId" integer NOT NULL,
+	"loanProductId" uuid NOT NULL,
 	"applicationNumber" varchar(50) NOT NULL,
 	"status" "loan_application_status" DEFAULT 'draft' NOT NULL,
 	"requestedLoanAmount" numeric(15, 2) NOT NULL,
@@ -182,8 +184,8 @@ CREATE TABLE "los"."loan_applications" (
 );
 --> statement-breakpoint
 CREATE TABLE "los"."mutual_fund_collateral" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"loanApplicationId" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"loanApplicationId" uuid NOT NULL,
 	"fundName" varchar(255) NOT NULL,
 	"fundHouse" varchar(255) NOT NULL,
 	"schemeCode" varchar(50) NOT NULL,
@@ -211,8 +213,8 @@ CREATE TABLE "los"."mutual_fund_collateral" (
 );
 --> statement-breakpoint
 CREATE TABLE "los"."documents" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"loanApplicationId" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"loanApplicationId" uuid NOT NULL,
 	"documentType" "document_type" NOT NULL,
 	"documentUrl" varchar(500) NOT NULL,
 	"fileName" varchar(255) NOT NULL,
@@ -226,8 +228,8 @@ CREATE TABLE "los"."documents" (
 );
 --> statement-breakpoint
 CREATE TABLE "los"."loan_sanction" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"loanApplicationId" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"loanApplicationId" uuid NOT NULL,
 	"sanctionLetterNumber" varchar(100) NOT NULL,
 	"sanctionedAmount" numeric(15, 2) NOT NULL,
 	"sanctionedInterestRate" numeric(8, 4) NOT NULL,
@@ -252,8 +254,8 @@ CREATE TABLE "los"."loan_sanction" (
 );
 --> statement-breakpoint
 CREATE TABLE "los"."approval_workflow" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"loanApplicationId" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"loanApplicationId" uuid NOT NULL,
 	"approverId" uuid NOT NULL,
 	"approvalLevel" integer NOT NULL,
 	"role" varchar(100) NOT NULL,
@@ -265,9 +267,9 @@ CREATE TABLE "los"."approval_workflow" (
 );
 --> statement-breakpoint
 CREATE TABLE "lms"."disbursement" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"loanApplicationId" integer NOT NULL,
-	"loanSanctionId" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"loanApplicationId" uuid NOT NULL,
+	"loanSanctionId" uuid NOT NULL,
 	"disbursementAmount" numeric(15, 2) NOT NULL,
 	"disbursementDate" timestamp DEFAULT now() NOT NULL,
 	"status" "disbursement_status" DEFAULT 'pending' NOT NULL,
@@ -286,9 +288,9 @@ CREATE TABLE "lms"."disbursement" (
 );
 --> statement-breakpoint
 CREATE TABLE "lms"."emi_schedule" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"loanApplicationId" integer NOT NULL,
-	"loanSanctionId" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"loanApplicationId" uuid NOT NULL,
+	"loanSanctionId" uuid NOT NULL,
 	"installmentNumber" integer NOT NULL,
 	"dueDate" date NOT NULL,
 	"principalAmount" numeric(15, 2) NOT NULL,
@@ -306,9 +308,9 @@ CREATE TABLE "lms"."emi_schedule" (
 );
 --> statement-breakpoint
 CREATE TABLE "lms"."repayment" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"loanApplicationId" integer NOT NULL,
-	"emiScheduleId" integer,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"loanApplicationId" uuid NOT NULL,
+	"emiScheduleId" uuid,
 	"paymentAmount" numeric(15, 2) NOT NULL,
 	"paymentDate" timestamp DEFAULT now() NOT NULL,
 	"paymentMode" varchar(50) NOT NULL,
@@ -324,9 +326,9 @@ CREATE TABLE "lms"."repayment" (
 );
 --> statement-breakpoint
 CREATE TABLE "lms"."loan_account" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"loanApplicationId" integer NOT NULL,
-	"loanSanctionId" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"loanApplicationId" uuid NOT NULL,
+	"loanSanctionId" uuid NOT NULL,
 	"accountNumber" varchar(50) NOT NULL,
 	"principalAmount" numeric(15, 2) NOT NULL,
 	"currentOutstanding" numeric(15, 2) NOT NULL,
@@ -345,8 +347,8 @@ CREATE TABLE "lms"."loan_account" (
 );
 --> statement-breakpoint
 CREATE TABLE "lms"."interest_accrual" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"loanAccountId" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"loanAccountId" uuid NOT NULL,
 	"accrualDate" date NOT NULL,
 	"principalOutstanding" numeric(15, 2) NOT NULL,
 	"interestRate" numeric(8, 4) NOT NULL,
@@ -357,8 +359,8 @@ CREATE TABLE "lms"."interest_accrual" (
 );
 --> statement-breakpoint
 CREATE TABLE "lms"."interest_rate_history" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"loanAccountId" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"loanAccountId" uuid NOT NULL,
 	"effectiveDate" date NOT NULL,
 	"oldRate" numeric(8, 4) NOT NULL,
 	"newRate" numeric(8, 4) NOT NULL,
@@ -381,7 +383,7 @@ CREATE TABLE "lms"."accrual_run_log" (
 );
 --> statement-breakpoint
 CREATE TABLE "lms"."fee_master" (
-	"id" serial PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"feeCode" varchar(50) NOT NULL,
 	"feeName" varchar(255) NOT NULL,
 	"feeType" "fee_type" NOT NULL,
@@ -397,9 +399,9 @@ CREATE TABLE "lms"."fee_master" (
 );
 --> statement-breakpoint
 CREATE TABLE "lms"."loan_fees" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"loanAccountId" integer NOT NULL,
-	"feeId" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"loanAccountId" uuid NOT NULL,
+	"feeId" uuid NOT NULL,
 	"feeAmount" numeric(15, 2) NOT NULL,
 	"waivedAmount" numeric(15, 2) DEFAULT '0' NOT NULL,
 	"paidAmount" numeric(15, 2) DEFAULT '0' NOT NULL,
@@ -413,8 +415,8 @@ CREATE TABLE "lms"."loan_fees" (
 );
 --> statement-breakpoint
 CREATE TABLE "lms"."fee_payment" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"loanFeeId" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"loanFeeId" uuid NOT NULL,
 	"paymentAmount" numeric(15, 2) NOT NULL,
 	"paymentDate" date NOT NULL,
 	"paymentMode" varchar(50) NOT NULL,
@@ -424,8 +426,8 @@ CREATE TABLE "lms"."fee_payment" (
 );
 --> statement-breakpoint
 CREATE TABLE "lms"."penalty_calculation" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"emiScheduleId" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"emiScheduleId" uuid NOT NULL,
 	"overdueDays" integer NOT NULL,
 	"penaltyAmount" numeric(15, 2) NOT NULL,
 	"calculatedDate" date NOT NULL,
@@ -436,7 +438,7 @@ CREATE TABLE "lms"."penalty_calculation" (
 );
 --> statement-breakpoint
 CREATE TABLE "lms"."collection_bucket" (
-	"id" serial PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"bucketCode" varchar(50) NOT NULL,
 	"bucketName" varchar(255) NOT NULL,
 	"minDpdDays" integer NOT NULL,
@@ -449,9 +451,9 @@ CREATE TABLE "lms"."collection_bucket" (
 );
 --> statement-breakpoint
 CREATE TABLE "lms"."loan_collection_status" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"loanAccountId" integer NOT NULL,
-	"currentBucket" integer,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"loanAccountId" uuid NOT NULL,
+	"currentBucket" uuid,
 	"dpdDays" integer DEFAULT 0 NOT NULL,
 	"lastPaymentDate" date,
 	"totalOverdueAmount" numeric(15, 2) DEFAULT '0' NOT NULL,
@@ -471,8 +473,8 @@ CREATE TABLE "lms"."loan_collection_status" (
 );
 --> statement-breakpoint
 CREATE TABLE "lms"."collection_activity" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"loanCollectionStatusId" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"loanCollectionStatusId" uuid NOT NULL,
 	"activityType" "collection_activity_type" NOT NULL,
 	"activityDate" date NOT NULL,
 	"notes" text,
@@ -483,8 +485,8 @@ CREATE TABLE "lms"."collection_activity" (
 );
 --> statement-breakpoint
 CREATE TABLE "lms"."recovery_proceeding" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"loanAccountId" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"loanAccountId" uuid NOT NULL,
 	"proceedingType" "proceeding_type" NOT NULL,
 	"stage" "proceeding_stage" DEFAULT 'initiated' NOT NULL,
 	"filingDate" date NOT NULL,
@@ -501,8 +503,8 @@ CREATE TABLE "lms"."recovery_proceeding" (
 );
 --> statement-breakpoint
 CREATE TABLE "lms"."loan_restructuring" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"loanAccountId" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"loanAccountId" uuid NOT NULL,
 	"restructuringType" "restructuring_type" NOT NULL,
 	"requestedDate" date NOT NULL,
 	"effectiveDate" date,
@@ -515,8 +517,8 @@ CREATE TABLE "lms"."loan_restructuring" (
 );
 --> statement-breakpoint
 CREATE TABLE "lms"."restructuring_terms" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"loanRestructuringId" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"loanRestructuringId" uuid NOT NULL,
 	"oldTenure" integer NOT NULL,
 	"newTenure" integer NOT NULL,
 	"oldInterestRate" numeric(8, 4) NOT NULL,
@@ -530,8 +532,8 @@ CREATE TABLE "lms"."restructuring_terms" (
 );
 --> statement-breakpoint
 CREATE TABLE "lms"."interest_rate_adjustment" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"loanAccountId" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"loanAccountId" uuid NOT NULL,
 	"effectiveFrom" date NOT NULL,
 	"previousRate" numeric(8, 4) NOT NULL,
 	"newRate" numeric(8, 4) NOT NULL,
@@ -543,8 +545,8 @@ CREATE TABLE "lms"."interest_rate_adjustment" (
 );
 --> statement-breakpoint
 CREATE TABLE "lms"."top_up_loan" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"parentLoanAccountId" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"parentLoanAccountId" uuid NOT NULL,
 	"topUpAmount" numeric(15, 2) NOT NULL,
 	"newTotalLoan" numeric(15, 2) NOT NULL,
 	"newTenure" integer NOT NULL,
@@ -556,8 +558,8 @@ CREATE TABLE "lms"."top_up_loan" (
 );
 --> statement-breakpoint
 CREATE TABLE "lms"."tenure_change" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"loanAccountId" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"loanAccountId" uuid NOT NULL,
 	"oldTenureMonths" integer NOT NULL,
 	"newTenureMonths" integer NOT NULL,
 	"effectiveDate" date NOT NULL,
@@ -659,11 +661,12 @@ CREATE TABLE "merchant"."merchants" (
 	"slug" varchar(255) NOT NULL,
 	"description" text,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
-	"updatedAt" timestamp DEFAULT now() NOT NULL
+	"updatedAt" timestamp DEFAULT now() NOT NULL,
+	"isActive" boolean DEFAULT false
 );
 --> statement-breakpoint
 CREATE TABLE "merchant"."merchant_categories" (
-	"id" serial PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
 	"merchantId" uuid NOT NULL,
 	"name" varchar(255) NOT NULL,
 	"slug" varchar(255) NOT NULL,
@@ -683,7 +686,7 @@ CREATE TABLE "merchant"."merchant_categories" (
 );
 --> statement-breakpoint
 CREATE TABLE "merchant"."product_bundles" (
-	"id" serial PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"merchantId" uuid NOT NULL,
 	"name" varchar(255) NOT NULL,
 	"slug" varchar(255) NOT NULL,
@@ -702,10 +705,10 @@ CREATE TABLE "merchant"."product_bundles" (
 );
 --> statement-breakpoint
 CREATE TABLE "merchant"."product_channel_pricing" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"productId" integer,
-	"productVariantId" integer,
-	"bundleId" integer,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"productId" uuid,
+	"productVariantId" uuid,
+	"bundleId" uuid,
 	"channel" varchar(20) NOT NULL,
 	"pricingType" varchar(20) DEFAULT 'standard' NOT NULL,
 	"price" numeric(15, 2) NOT NULL,
@@ -719,8 +722,8 @@ CREATE TABLE "merchant"."product_channel_pricing" (
 );
 --> statement-breakpoint
 CREATE TABLE "merchant"."product_variants" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"productId" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"productId" uuid NOT NULL,
 	"variantSku" varchar(100) NOT NULL,
 	"variantName" varchar(255) NOT NULL,
 	"barcode" varchar(50),
@@ -740,9 +743,9 @@ CREATE TABLE "merchant"."product_variants" (
 );
 --> statement-breakpoint
 CREATE TABLE "merchant"."products" (
-	"id" serial PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
 	"merchantId" uuid NOT NULL,
-	"categoryId" integer,
+	"categoryId" uuid,
 	"name" varchar(255) NOT NULL,
 	"slug" varchar(255) NOT NULL,
 	"sku" varchar(100) NOT NULL,
@@ -778,11 +781,11 @@ CREATE TABLE "merchant"."products" (
 );
 --> statement-breakpoint
 CREATE TABLE "merchant"."order_items" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"orderId" integer NOT NULL,
-	"productId" integer NOT NULL,
-	"productVariantId" integer,
-	"bundleId" integer,
+	"id" uuid PRIMARY KEY NOT NULL,
+	"orderId" uuid NOT NULL,
+	"productId" uuid NOT NULL,
+	"productVariantId" uuid,
+	"bundleId" uuid,
 	"productName" varchar(255) NOT NULL,
 	"productSku" varchar(100) NOT NULL,
 	"variantName" varchar(255),
@@ -802,7 +805,7 @@ CREATE TABLE "merchant"."order_items" (
 );
 --> statement-breakpoint
 CREATE TABLE "merchant"."orders" (
-	"id" serial PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"orderNumber" varchar(50) NOT NULL,
 	"customerId" uuid NOT NULL,
 	"merchantId" uuid NOT NULL,
@@ -838,15 +841,15 @@ CREATE TABLE "merchant"."orders" (
 	"utmSource" varchar(255),
 	"utmMedium" varchar(255),
 	"utmCampaign" varchar(255),
-	"loanApplicationId" integer,
+	"loanApplicationId" uuid,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "orders_orderNumber_unique" UNIQUE("orderNumber")
 );
 --> statement-breakpoint
 CREATE TABLE "merchant"."order_status_history" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"orderId" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"orderId" uuid NOT NULL,
 	"fromStatus" varchar(50),
 	"toStatus" varchar(50) NOT NULL,
 	"location" varchar(255),
@@ -859,9 +862,9 @@ CREATE TABLE "merchant"."order_status_history" (
 );
 --> statement-breakpoint
 CREATE TABLE "merchant"."settlement_orders" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"settlementId" integer NOT NULL,
-	"orderId" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"settlementId" uuid NOT NULL,
+	"orderId" uuid NOT NULL,
 	"orderAmount" numeric(15, 2) NOT NULL,
 	"commissionAmount" numeric(15, 2) NOT NULL,
 	"refundAmount" numeric(15, 2) DEFAULT '0.00',
@@ -874,7 +877,7 @@ CREATE TABLE "merchant"."settlement_orders" (
 );
 --> statement-breakpoint
 CREATE TABLE "merchant"."settlements" (
-	"id" serial PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"settlementNumber" varchar(50) NOT NULL,
 	"merchantId" uuid NOT NULL,
 	"settlementPeriodStart" timestamp NOT NULL,
@@ -947,17 +950,17 @@ CREATE TABLE "merchant"."merchant_analytics_daily" (
 );
 --> statement-breakpoint
 CREATE TABLE "merchant"."merchant_analytics_raw" (
-	"id" serial PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
 	"merchantId" uuid NOT NULL,
 	"storeId" uuid,
 	"eventType" varchar(50) NOT NULL,
 	"eventName" varchar(100) NOT NULL,
 	"customerId" uuid,
 	"sessionId" varchar(255),
-	"productId" integer,
-	"productVariantId" integer,
-	"categoryId" integer,
-	"orderId" integer,
+	"productId" uuid,
+	"productVariantId" uuid,
+	"categoryId" uuid,
+	"orderId" uuid,
 	"eventProperties" jsonb,
 	"channel" varchar(20),
 	"source" varchar(50),
@@ -976,11 +979,45 @@ CREATE TABLE "merchant"."merchant_analytics_raw" (
 	"createdAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "merchant"."qrTable" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"merchantId" uuid NOT NULL,
+	"qrCode" varchar(255) NOT NULL,
+	"journeyType" "journey" DEFAULT 'basic',
+	"amount" numeric(15, 2),
+	"productId" uuid,
+	"variantId" uuid,
+	"qrCodeData" text,
+	"isActive" boolean DEFAULT true NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "shared"."session_journey" (
+	"id" uuid PRIMARY KEY NOT NULL,
+	"page" varchar(255) NOT NULL,
+	"productId" uuid NOT NULL,
+	"variantId" uuid NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "users"."merchant_user_journey" (
+	"id" uuid PRIMARY KEY NOT NULL,
+	"sessionId" uuid NOT NULL,
+	"userId" uuid NOT NULL,
+	"page" varchar(255) NOT NULL,
+	"productId" uuid NOT NULL,
+	"variantId" uuid NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "los"."ltv_config" ADD CONSTRAINT "ltv_config_loanProductId_loan_products_id_fk" FOREIGN KEY ("loanProductId") REFERENCES "los"."loan_products"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "users"."cas_data" ADD CONSTRAINT "cas_data_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "users"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "los"."kyc_verification" ADD CONSTRAINT "kyc_verification_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "users"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "users"."transactions" ADD CONSTRAINT "transactions_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "users"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "users"."autopay" ADD CONSTRAINT "autopay_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "users"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "los"."ltv_config" ADD CONSTRAINT "ltv_config_loanProductId_loan_products_id_fk" FOREIGN KEY ("loanProductId") REFERENCES "los"."loan_products"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "los"."loan_applications" ADD CONSTRAINT "loan_applications_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "users"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "los"."loan_applications" ADD CONSTRAINT "loan_applications_loanProductId_loan_products_id_fk" FOREIGN KEY ("loanProductId") REFERENCES "los"."loan_products"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "los"."loan_applications" ADD CONSTRAINT "loan_applications_reviewedBy_users_id_fk" FOREIGN KEY ("reviewedBy") REFERENCES "users"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -1034,6 +1071,15 @@ ALTER TABLE "merchant"."settlement_orders" ADD CONSTRAINT "settlement_orders_set
 ALTER TABLE "merchant"."settlement_orders" ADD CONSTRAINT "settlement_orders_orderId_orders_id_fk" FOREIGN KEY ("orderId") REFERENCES "merchant"."orders"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "merchant"."settlements" ADD CONSTRAINT "settlements_merchantId_merchants_id_fk" FOREIGN KEY ("merchantId") REFERENCES "merchant"."merchants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "merchant"."merchant_analytics_daily" ADD CONSTRAINT "merchant_analytics_daily_merchantId_merchants_id_fk" FOREIGN KEY ("merchantId") REFERENCES "merchant"."merchants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "merchant"."qrTable" ADD CONSTRAINT "qrTable_merchantId_merchants_id_fk" FOREIGN KEY ("merchantId") REFERENCES "merchant"."merchants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "merchant"."qrTable" ADD CONSTRAINT "qrTable_productId_products_id_fk" FOREIGN KEY ("productId") REFERENCES "merchant"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "merchant"."qrTable" ADD CONSTRAINT "qrTable_variantId_products_id_fk" FOREIGN KEY ("variantId") REFERENCES "merchant"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "shared"."session_journey" ADD CONSTRAINT "session_journey_productId_products_id_fk" FOREIGN KEY ("productId") REFERENCES "merchant"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "shared"."session_journey" ADD CONSTRAINT "session_journey_variantId_product_variants_id_fk" FOREIGN KEY ("variantId") REFERENCES "merchant"."product_variants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "users"."merchant_user_journey" ADD CONSTRAINT "merchant_user_journey_sessionId_session_journey_id_fk" FOREIGN KEY ("sessionId") REFERENCES "shared"."session_journey"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "users"."merchant_user_journey" ADD CONSTRAINT "merchant_user_journey_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "users"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "users"."merchant_user_journey" ADD CONSTRAINT "merchant_user_journey_productId_products_id_fk" FOREIGN KEY ("productId") REFERENCES "merchant"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "users"."merchant_user_journey" ADD CONSTRAINT "merchant_user_journey_variantId_product_variants_id_fk" FOREIGN KEY ("variantId") REFERENCES "merchant"."product_variants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "kyc_user" ON "los"."kyc_verification" USING btree ("userId");--> statement-breakpoint
 CREATE INDEX "kyc_aadhaar" ON "los"."kyc_verification" USING btree ("aadhaarNumber");--> statement-breakpoint
 CREATE INDEX "kyc_pan" ON "los"."kyc_verification" USING btree ("panNumber");--> statement-breakpoint
@@ -1202,4 +1248,8 @@ CREATE INDEX "analytics_raw_product" ON "merchant"."merchant_analytics_raw" USIN
 CREATE INDEX "analytics_raw_order" ON "merchant"."merchant_analytics_raw" USING btree ("orderId");--> statement-breakpoint
 CREATE INDEX "analytics_raw_occurred" ON "merchant"."merchant_analytics_raw" USING btree ("occurredAt");--> statement-breakpoint
 CREATE INDEX "analytics_raw_session" ON "merchant"."merchant_analytics_raw" USING btree ("sessionId");--> statement-breakpoint
-CREATE INDEX "analytics_raw_merchant_event" ON "merchant"."merchant_analytics_raw" USING btree ("merchantId","eventType");
+CREATE INDEX "analytics_raw_merchant_event" ON "merchant"."merchant_analytics_raw" USING btree ("merchantId","eventType");--> statement-breakpoint
+CREATE INDEX "user_journey_page" ON "users"."merchant_user_journey" USING btree ("page");--> statement-breakpoint
+CREATE INDEX "user_journey_product" ON "users"."merchant_user_journey" USING btree ("productId");--> statement-breakpoint
+CREATE INDEX "user_journey_variant" ON "users"."merchant_user_journey" USING btree ("variantId");--> statement-breakpoint
+CREATE INDEX "user_journey_created" ON "users"."merchant_user_journey" USING btree ("createdAt");

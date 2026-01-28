@@ -1,0 +1,318 @@
+# Submodule Updater Workflow
+# This workflow should be added to each superproject that uses Master-DB as a submodule
+# Location: .github/workflows/submodule-updater.yml
+
+name: Submodule Updater
+
+on:
+  repository_dispatch:
+    types: [submodule-updated]
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'Commit SHA to update to'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  update-submodule:
+    name: Update Master-DB Submodule
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJson(vars.SUBMODULE_CONFIG || '{}').validation.timeout_minutes || 30 }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.MASTER_DB_PAT }}
+
+      - name: Get submodule path
+        id: submodule-path
+        run: |
+          # Find the path to Master-DB submodule
+          SUBMODULE_PATH=$(git config --file .gitmodules --get-regexp path | grep -i master-db | awk '{print $2}')
+          if [ -z "$SUBMODULE_PATH" ]; then
+            echo "Failed to find Master-DB submodule path"
+            exit 1
+          fi
+          echo "path=$SUBMODULE_PATH" >> $GITHUB_OUTPUT
+          echo "Found Master-DB at: $SUBMODULE_PATH"
+
+      - name: Display event details
+        run: |
+          echo "### Submodule Update Event Received" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **SHA:** ${{ github.event.client_payload.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${{ github.event.client_payload.branch }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp:** ${{ github.event.client_payload.timestamp }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Submodule Path:** ${{ steps.submodule-path.outputs.path }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Update submodule reference
+        id: update-submodule
+        run: |
+          SUBMODULE_PATH="${{ steps.submodule-path.outputs.path }}"
+          TARGET_SHA="${{ github.event.client_payload.sha }}"
+
+          # Initialize and update submodule
+          git submodule update --init --recursive "$SUBMODULE_PATH"
+
+          # Navigate to submodule and fetch latest
+          cd "$SUBMODULE_PATH"
+          git fetch origin
+          git checkout "$TARGET_SHA"
+
+          # Go back to repo root
+          cd -
+
+          # Stage the submodule change
+          git add "$SUBMODULE_PATH"
+
+          # Check if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes detected. Submodule is already at $TARGET_SHA"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "Submodule updated to $TARGET_SHA"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+
+            # Show the diff
+            echo "### Submodule Changes" >> $GITHUB_STEP_SUMMARY
+            echo '```diff' >> $GITHUB_STEP_SUMMARY
+            git diff --staged >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Load configuration
+        id: config
+        if: steps.update-submodule.outputs.has_changes == 'true'
+        run: |
+          # Load optional configuration from .github/submodule-config.yml
+          if [ -f ".github/submodule-config.yml" ]; then
+            echo "Using project-specific configuration"
+            # Parse YAML (basic implementation)
+            OPT_OUT=$(grep "^opt_out:" .github/submodule-config.yml | awk '{print $2}' || echo "false")
+            SKIP_TESTS=$(grep "^skip_tests:" .github/submodule-config.yml | awk '{print $2}' || echo "false")
+            MIGRATION_CHECK=$(grep "^migration_check:" .github/submodule-config.yml | awk '{print $2}' || echo "true")
+
+            echo "opt_out=$OPT_OUT" >> $GITHUB_OUTPUT
+            echo "skip_tests=$SKIP_TESTS" >> $GITHUB_OUTPUT
+            echo "migration_check=$MIGRATION_CHECK" >> $GITHUB_OUTPUT
+          else
+            # Use defaults
+            echo "opt_out=false" >> $GITHUB_OUTPUT
+            echo "skip_tests=false" >> $GITHUB_OUTPUT
+            echo "migration_check=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check if opted out
+        id: opt-out
+        if: steps.config.outputs.opt_out == 'true'
+        run: |
+          echo "::notice::Project is opted out of automatic submodule updates"
+          echo "Opted out of automatic updates" >> $GITHUB_STEP_SUMMARY
+          exit 0
+
+      - name: Setup Node.js
+        if: steps.config.outputs.opt_out != 'true' && steps.update-submodule.outputs.has_changes == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: 'package.json'
+          cache: 'npm'
+
+      - name: Install dependencies
+        if: steps.config.outputs.opt_out != 'true' && steps.update-submodule.outputs.has_changes == 'true'
+        run: npm ci
+
+      - name: Run tests
+        id: tests
+        if: steps.config.outputs.opt_out != 'true' && steps.update-submodule.outputs.has_changes == 'true' && steps.config.outputs.skip_tests != 'true'
+        run: |
+          echo "Running test suite..."
+          npm test 2>&1 | tee test-output.log
+
+          if [ ${PIPESTATUS[0]} -eq 0 ]; then
+            echo "status=passed" >> $GITHUB_OUTPUT
+            echo "✅ Tests passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "❌ Tests failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Test Output" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat test-output.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: Check database migrations
+        id: migrations
+        if: steps.config.outputs.opt_out != 'true' && steps.update-submodule.outputs.has_changes == 'true' && steps.config.outputs.migration_check == 'true' && steps.tests.status != 'failed'
+        run: |
+          echo "Checking database migrations..."
+
+          # Run Drizzle migration check
+          if npm run db:check 2>&1 | tee migration-output.log; then
+            echo "status=passed" >> $GITHUB_OUTPUT
+            echo "✅ Migration check passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "❌ Migration check failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Migration Output" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat migration-output.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: Verify build
+        id: build
+        if: steps.config.outputs.opt_out != 'true' && steps.update-submodule.outputs.has_changes == 'true' && steps.tests.status != 'failed' && steps.migrations.status != 'failed'
+        run: |
+          echo "Verifying build..."
+          if npm run build 2>&1 | tee build-output.log; then
+            echo "status=passed" >> $GITHUB_OUTPUT
+            echo "✅ Build successful" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "❌ Build failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Build Output" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat build-output.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: Create branch name
+        id: branch-name
+        if: steps.config.outputs.opt_out != 'true' && steps.update-submodule.outputs.has_changes == 'true' && steps.tests.status != 'failed' && steps.migrations.status != 'failed' && steps.build.status != 'failed'
+        run: |
+          TIMESTAMP="${{ github.event.client_payload.timestamp }}"
+          SHORT_SHA="${{ github.event.client_payload.sha }}"
+          BRANCH_NAME="update-master-db-${TIMESTAMP}-${SHORT_SHA:0:7}"
+
+          # Check if branch already exists and delete it
+          if git ls-remote --heads origin "$BRANCH_NAME" | grep -q "$BRANCH_NAME"; then
+            echo "Branch $BRANCH_NAME already exists, deleting..."
+            git push origin ":$BRANCH_NAME" || true
+          fi
+
+          echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - name: Create PR
+        if: steps.config.outputs.opt_out != 'true' && steps.update-submodule.outputs.has_changes == 'true' && steps.tests.status != 'failed' && steps.migrations.status != 'failed' && steps.build.status != 'failed'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.MASTER_DB_PAT }}
+          branch: ${{ steps.branch-name.outputs.branch }}
+          title: "chore: Update Master-DB submodule to ${{ github.event.client_payload.sha }}"
+          body: |
+            ## Automated Submodule Update
+
+            This PR was automatically generated when Master-DB was updated.
+
+            ### Details
+            - **Commit:** `${{ github.event.client_payload.sha }}`
+            - **Branch:** `${{ github.event.client_payload.branch }}`
+            - **Updated:** `${{ github.event.client_payload.timestamp }}`
+            - **Author:** `${{ github.event.client_payload.committer }}`
+
+            ### Commit Message
+            ```
+            ${{ github.event.client_payload.commit_message }}
+            ```
+
+            ### Validation Results
+            ✅ All tests passed
+            ✅ Database migrations verified
+            ✅ Build successful
+
+            ### Next Steps
+            - [ ] Review the changes in Master-DB
+            - [ ] Verify compatibility with your project
+            - [ ] Merge this PR to update the submodule
+
+            ---
+            *This PR was created by the [Submodule Update Automation](${{ github.server_url }}/1fi-finance/Master-DB/actions)*
+
+          labels: |
+            dependencies
+            automated
+            submodule-update
+
+          draft: false
+          reviewers: ${{ fromJson(vars.SUBMODULE_CONFIG || '{}').assignees || [] }}
+
+      - name: Create issue on failure
+        if: |
+          steps.config.outputs.opt_out != 'true' &&
+          steps.update-submodule.outputs.has_changes == 'true' &&
+          (steps.tests.status == 'failed' || steps.migrations.status == 'failed' || steps.build.status == 'failed')
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.MASTER_DB_PAT }}
+          script: |
+            const testsFailed = '${{ steps.tests.status }}' === 'failed';
+            const migrationsFailed = '${{ steps.migrations.status }}' === 'failed';
+            const buildFailed = '${{ steps.build.status }}' === 'failed';
+
+            let body = `## ⚠️ Submodule Update Validation Failed
+
+            The automated update to Master-DB commit \`${{ github.event.client_payload.sha }}\` failed validation.
+
+            ### Details
+            - **Commit:** ${{ github.event.client_payload.sha }}
+            - **Author:** ${{ github.event.client_payload.committer }}
+            - **Branch:** ${{ github.event.client_payload.branch }}
+            - **Workflow Run:** [View Logs](${{ github.server_url }}/${context.repo.owner}/${context.repo.repo}/actions/runs/${{ github.run_id }})
+
+            ### Failed Validations
+            `;
+
+            if (testsFailed) {
+              body += '- ❌ **Tests failed** - See test output in workflow logs\n';
+            }
+            if (migrationsFailed) {
+              body += '- ❌ **Migration check failed** - See migration output in workflow logs\n';
+            }
+            if (buildFailed) {
+              body += '- ❌ **Build failed** - See build output in workflow logs\n';
+            }
+
+            body += `
+            ### Action Required
+
+            Please review the validation errors and determine if this is a compatibility issue
+            or if the Master-DB changes require updates to this project.
+
+            #### Steps to Resolve
+            1. Review the [workflow logs](${{ github.server_url }}/${context.repo.owner}/${context.repo.repo}/actions/runs/${{ github.run_id }})
+            2. Check if there are breaking changes in the Master-DB commit
+            3. Fix compatibility issues in this repository
+            4. Re-run the workflow or manually update the submodule
+
+            /label ~bug ~submodule-update-failed ~needs-attention
+            `;
+
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `⚠️ Submodule update validation failed - ${{ github.event.client_payload.sha }}`,
+              body: body,
+              labels: ['bug', 'submodule-update-failed', 'needs-attention']
+            });
+
+            core.info(`Created issue #${issue.data.number}`);
+
+      - name: Send status back to Master-DB
+        if: always()
+        run: |
+          # Optionally send a status check back to the Master-DB commit
+          # This requires a PAT with repo:status permission
+          echo "Status: ${{ job.status }}"

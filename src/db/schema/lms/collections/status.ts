@@ -1,15 +1,15 @@
-import { serial, integer, date, decimal, varchar, text, timestamp, index } from "drizzle-orm/pg-core";
+import { serial, integer, date, decimal, varchar, text, timestamp, index, uuid } from "drizzle-orm/pg-core";
 import { loanAccountTable } from "../account";
 import { collectionBucketTable } from "./bucket";
 import { npaCategoryEnum } from "../../enums";
 import { lmsSchema } from "../../definitions";
 
 export const loanCollectionStatusTable = lmsSchema.table("loan_collection_status", {
-    id: serial().primaryKey(),
-    loanAccountId: integer().references(() => loanAccountTable.id).notNull().unique(),
+    id: uuid().defaultRandom().primaryKey(),
+    loanAccountId: uuid().references(() => loanAccountTable.id).notNull().unique(),
 
     // Bucket and DPD
-    currentBucket: integer().references(() => collectionBucketTable.id),
+    currentBucket: uuid().references(() => collectionBucketTable.id),
     dpdDays: integer().notNull().default(0),
 
     // Payment Tracking

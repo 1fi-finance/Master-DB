@@ -1,11 +1,11 @@
-import { serial, integer, date, varchar, text, timestamp, index } from "drizzle-orm/pg-core";
+import { serial, integer, date, varchar, text, timestamp, index, uuid } from "drizzle-orm/pg-core";
 import { loanCollectionStatusTable } from "./status";
 import { collectionActivityTypeEnum, collectionOutcomeEnum } from "../../enums";
 import { lmsSchema } from "../../definitions";
 
 export const collectionActivityTable = lmsSchema.table("collection_activity", {
-    id: serial().primaryKey(),
-    loanCollectionStatusId: integer().references(() => loanCollectionStatusTable.id).notNull(),
+    id: uuid().defaultRandom().primaryKey(),
+    loanCollectionStatusId: uuid().references(() => loanCollectionStatusTable.id).notNull(),
 
     // Activity Details
     activityType: collectionActivityTypeEnum().notNull(),

@@ -5,8 +5,8 @@ import { approvalStatusEnum } from "../enums";
 import { losSchema } from "../definitions";
 
 export const approvalWorkflowTable = losSchema.table("approval_workflow", {
-    id: serial().primaryKey(),
-    loanApplicationId: integer().references(() => loanApplicationsTable.id).notNull(),
+    id: uuid().defaultRandom().primaryKey(),
+    loanApplicationId: uuid().references(() => loanApplicationsTable.id).notNull(),
 
     // Approval Hierarchy
     approverId: uuid().references(() => usersTable.id).notNull(),

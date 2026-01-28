@@ -13,8 +13,8 @@ import { ordersTable } from "./orders";
 
 // Order Status History - Complete status audit trail
 export const orderStatusHistoryTable = merchantSchema.table("order_status_history", {
-    id: serial().primaryKey(),
-    orderId: integer().references(() => ordersTable.id, { onDelete: "cascade" }).notNull(),
+    id: uuid().defaultRandom().primaryKey(),
+    orderId: uuid().references(() => ordersTable.id, { onDelete: "cascade" }).notNull(),
 
     // Status Change
     fromStatus: varchar({ length: 50 }),

@@ -16,7 +16,7 @@ import { ordersTable } from "../orders/orders";
 
 // Settlements - Merchant payment settlements
 export const settlementsTable = merchantSchema.table("settlements", {
-    id: serial().primaryKey(),
+    id: uuid().defaultRandom().primaryKey(),
     settlementNumber: varchar({ length: 50 }).unique().notNull(),
 
     // Merchant & Period
@@ -86,9 +86,9 @@ export const settlementsTable = merchantSchema.table("settlements", {
 
 // Settlement Orders - Order-level settlement tracking
 export const settlementOrdersTable = merchantSchema.table("settlement_orders", {
-    id: serial().primaryKey(),
-    settlementId: integer().references(() => settlementsTable.id, { onDelete: "cascade" }).notNull(),
-    orderId: integer().references(() => ordersTable.id).notNull(),
+    id: uuid().defaultRandom().primaryKey(),
+    settlementId: uuid().references(() => settlementsTable.id, { onDelete: "cascade" }).notNull(),
+    orderId: uuid().references(() => ordersTable.id).notNull(),
 
     // Order Financials
     orderAmount: decimal({ precision: 15, scale: 2 }).notNull(),

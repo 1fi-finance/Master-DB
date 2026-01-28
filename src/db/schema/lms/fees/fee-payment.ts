@@ -1,10 +1,10 @@
-import { serial, integer, decimal, date, varchar, timestamp, index } from "drizzle-orm/pg-core";
+import { serial, integer, decimal, date, varchar, timestamp, index, uuid } from "drizzle-orm/pg-core";
 import { loanFeesTable } from "./loan-fees";
 import { lmsSchema } from "../../definitions";
 
 export const feePaymentTable = lmsSchema.table("fee_payment", {
-    id: serial().primaryKey(),
-    loanFeeId: integer().references(() => loanFeesTable.id).notNull(),
+    id: uuid().defaultRandom().primaryKey(),
+    loanFeeId: uuid().references(() => loanFeesTable.id).notNull(),
 
     // Payment Details
     paymentAmount: decimal({ precision: 15, scale: 2 }).notNull(),

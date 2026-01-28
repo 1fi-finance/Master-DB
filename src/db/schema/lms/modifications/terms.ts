@@ -1,10 +1,10 @@
-import { serial, integer, decimal, text, timestamp } from "drizzle-orm/pg-core";
+import { serial, integer, decimal, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { loanRestructuringTable } from "./restructuring";
 import { lmsSchema } from "../../definitions";
 
 export const restructuringTermsTable = lmsSchema.table("restructuring_terms", {
-    id: serial().primaryKey(),
-    loanRestructuringId: integer().references(() => loanRestructuringTable.id).notNull(),
+    id: uuid().defaultRandom().primaryKey(),
+    loanRestructuringId: uuid().references(() => loanRestructuringTable.id).notNull(),
 
     // Tenure Changes
     oldTenure: integer().notNull(),

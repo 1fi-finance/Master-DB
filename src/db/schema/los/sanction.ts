@@ -4,8 +4,8 @@ import { usersTable } from "../users";
 import { losSchema } from "../definitions";
 
 export const loanSanctionTable = losSchema.table("loan_sanction", {
-    id: serial().primaryKey(),
-    loanApplicationId: integer().references(() => loanApplicationsTable.id).notNull().unique(),
+    id: uuid().defaultRandom().primaryKey(),
+    loanApplicationId: uuid().references(() => loanApplicationsTable.id).notNull().unique(),
 
     // Sanction Details
     sanctionLetterNumber: varchar({ length: 100 }).notNull().unique(),

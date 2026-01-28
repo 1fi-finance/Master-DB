@@ -40,9 +40,9 @@ export const merchantAnalyticsDailyTable = merchantSchema.table("merchant_analyt
     inventoryValue: decimal({ precision: 15, scale: 2 }).default("0.00"),
 
     // Top Performing
-    topSellingProducts: jsonb(), // Array of top 10 products
-    fastMovingProducts: jsonb(), // Products with high turnover
-    slowMovingProducts: jsonb(), // Products with low turnover
+    topSellingProducts: jsonb(),
+    fastMovingProducts: jsonb(),
+    slowMovingProducts: jsonb(),
 
     // Customer Metrics
     newCustomers: integer().default(0),
@@ -78,7 +78,7 @@ export const merchantAnalyticsDailyTable = merchantSchema.table("merchant_analyt
 
 // Merchant Analytics Raw - Detailed event data
 export const merchantAnalyticsRawTable = merchantSchema.table("merchant_analytics_raw", {
-    id: serial().primaryKey(),
+    id: uuid().primaryKey(),
     merchantId: uuid().notNull(),
     storeId: uuid(),
 
@@ -91,12 +91,12 @@ export const merchantAnalyticsRawTable = merchantSchema.table("merchant_analytic
     sessionId: varchar({ length: 255 }), // For web sessions
 
     // Product Context
-    productId: integer(),
-    productVariantId: integer(),
-    categoryId: integer(),
+    productId: uuid(),
+    productVariantId: uuid(),
+    categoryId: uuid(),
 
     // Order Context
-    orderId: integer(),
+    orderId: uuid(),
 
     // Event Data
     eventProperties: jsonb(), // Flexible event-specific data

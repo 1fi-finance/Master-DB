@@ -1,10 +1,10 @@
-import { serial, integer, decimal, date, boolean, varchar, text, timestamp, index } from "drizzle-orm/pg-core";
+import { serial, integer, decimal, date, boolean, varchar, text, timestamp, index, uuid } from "drizzle-orm/pg-core";
 import { emiScheduleTable } from "../repayment";
 import { lmsSchema } from "../../definitions";
 
 export const penaltyCalculationTable = lmsSchema.table("penalty_calculation", {
-    id: serial().primaryKey(),
-    emiScheduleId: integer().references(() => emiScheduleTable.id).notNull(),
+    id: uuid().defaultRandom().primaryKey(),
+    emiScheduleId: uuid().references(() => emiScheduleTable.id).notNull(),
 
     // Penalty Details
     overdueDays: integer().notNull(),

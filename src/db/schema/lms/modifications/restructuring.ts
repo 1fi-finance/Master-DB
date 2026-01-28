@@ -1,11 +1,11 @@
-import { serial, integer, date, varchar, text, timestamp, index } from "drizzle-orm/pg-core";
+import { serial, integer, date, varchar, text, timestamp, index, uuid } from "drizzle-orm/pg-core";
 import { loanAccountTable } from "../account";
 import { restructuringTypeEnum, restructuringStatusEnum } from "../../enums";
 import { lmsSchema } from "../../definitions";
 
 export const loanRestructuringTable = lmsSchema.table("loan_restructuring", {
-    id: serial().primaryKey(),
-    loanAccountId: integer().references(() => loanAccountTable.id).notNull(),
+    id: uuid().defaultRandom().primaryKey(),
+    loanAccountId: uuid().references(() => loanAccountTable.id).notNull(),
 
     // Restructuring Details
     restructuringType: restructuringTypeEnum().notNull(),

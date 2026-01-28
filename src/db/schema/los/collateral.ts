@@ -1,11 +1,11 @@
-import { serial, integer, varchar, decimal, boolean, timestamp, index, jsonb, text } from "drizzle-orm/pg-core";
+import { serial, integer, varchar, decimal, boolean, timestamp, index, jsonb, text, uuid } from "drizzle-orm/pg-core";
 import { mutualFundTypeEnum } from "../enums";
 import { loanApplicationsTable } from "./applications";
 import { losSchema } from "../definitions";
 
 export const mutualFundCollateralTable = losSchema.table("mutual_fund_collateral", {
-    id: serial().primaryKey(),
-    loanApplicationId: integer().references(() => loanApplicationsTable.id).notNull(),
+    id: uuid().defaultRandom().primaryKey(),
+    loanApplicationId: uuid().references(() => loanApplicationsTable.id).notNull(),
 
     // Mutual Fund Details
     fundName: varchar({ length: 255 }).notNull(),

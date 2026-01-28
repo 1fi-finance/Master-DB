@@ -5,9 +5,9 @@ import { loanProductsTable } from "./products";
 import { losSchema } from "../definitions";
 
 export const loanApplicationsTable = losSchema.table("loan_applications", {
-    id: serial().primaryKey(),
+    id: uuid().primaryKey(),
     userId: uuid().references(() => usersTable.id).notNull(),
-    loanProductId: integer().references(() => loanProductsTable.id).notNull(),
+    loanProductId: uuid().references(() => loanProductsTable.id).notNull(),
     applicationNumber: varchar({ length: 50 }).notNull().unique(),
     status: loanApplicationStatusEnum().notNull().default("draft"),
 

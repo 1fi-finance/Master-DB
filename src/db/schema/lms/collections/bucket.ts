@@ -1,8 +1,8 @@
-import { serial, integer, varchar, text, boolean, timestamp, decimal, index } from "drizzle-orm/pg-core";
+import { serial, integer, varchar, text, boolean, timestamp, decimal, index, uuid } from "drizzle-orm/pg-core";
 import { lmsSchema } from "../../definitions";
 
 export const collectionBucketTable = lmsSchema.table("collection_bucket", {
-    id: serial().primaryKey(),
+    id: uuid().defaultRandom().primaryKey(),
 
     // Bucket Definition
     bucketCode: varchar({ length: 50 }).notNull().unique(),

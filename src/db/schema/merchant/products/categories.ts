@@ -13,7 +13,7 @@ import { merchantSchema } from "../../definitions";
 
 // Merchant Categories - Merchant-specific category trees
 export const merchantCategoriesTable = merchantSchema.table("merchant_categories", {
-    id: serial().primaryKey(),
+    id: uuid().primaryKey(),
     merchantId: uuid().notNull(), // Categories can be merchant-specific
 
     name: varchar({ length: 255 }).notNull(),

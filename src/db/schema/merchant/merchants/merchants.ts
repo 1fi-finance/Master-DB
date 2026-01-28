@@ -8,7 +8,8 @@ export const merchants = merchantSchema.table("merchants", {
     slug: varchar({ length: 255 }).notNull(),
     description: text(),
     createdAt: timestamp().notNull().defaultNow(),
-    updatedAt: timestamp().notNull().defaultNow()
+    updatedAt: timestamp().notNull().defaultNow(),
+    isActive: boolean().default(false)
 });
 
 export const merchantKYC = merchantSchema.table("merchant_kyc", {

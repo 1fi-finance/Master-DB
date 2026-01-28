@@ -1,11 +1,11 @@
-import { serial, integer, date, decimal, varchar, boolean, timestamp, index } from "drizzle-orm/pg-core";
+import { serial, integer, date, decimal, varchar, boolean, timestamp, index, uuid } from "drizzle-orm/pg-core";
 import { loanAccountTable } from "../account";
 import { adjustmentReasonEnum } from "../../enums";
 import { lmsSchema } from "../../definitions";
 
 export const interestRateAdjustmentTable = lmsSchema.table("interest_rate_adjustment", {
-    id: serial().primaryKey(),
-    loanAccountId: integer().references(() => loanAccountTable.id).notNull(),
+    id: uuid().defaultRandom().primaryKey(),
+    loanAccountId: uuid().references(() => loanAccountTable.id).notNull(),
 
     // Rate Details
     effectiveFrom: date().notNull(),

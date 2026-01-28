@@ -1,0 +1,100 @@
+# Submodule Configuration
+# This file allows superprojects to override default behavior for automated submodule updates
+# Location: .github/submodule-config.yml
+
+# Set to true to opt-out of automatic submodule updates for this repository
+# When true, this repository will not receive automated PRs when Master-DB is updated
+opt_out: false
+
+# Skip running tests before creating PR
+# Set to true if your project has no tests or if you want to manually validate
+skip_tests: false
+
+# Skip migration checking
+# Set to true if your project doesn't use database migrations
+migration_check: true
+
+# Customize the branch name for update PRs
+# Available variables: {timestamp}, {sha}, {short_sha}
+branch_name: "update-master-db-{timestamp}"
+
+# Automatically assign PRs to specific team members
+assignees:
+  # - "tech-lead"
+  # - "db-admin"
+
+# Add custom labels to created PRs (in addition to defaults)
+labels:
+  - "dependencies"
+  - "automated"
+
+# Set PR as draft instead of ready for review
+draft_pr: false
+
+# Enable auto-merge if validation passes
+# Note: This requires branch protection rules to be configured
+auto_merge: false
+
+# Custom test command (overrides default)
+# test_command: "npm run test:ci"
+
+# Custom migration check command (overrides default)
+# migration_check_command: "npm run db:verify"
+
+# Custom build command (overrides default)
+# build_command: "npm run build:production"
+
+# Require approval from specific reviewers before PR can be merged
+required_reviewers:
+  # - "senior-developer"
+  # - "tech-lead"
+
+# Number of approvers required
+required_approving_review_count: 1
+
+# Dismiss stale reviews when new commits are pushed
+dismiss_stale_reviews: false
+
+# Request reviews from teams instead of individuals
+team_reviewers:
+  # - "engineering-team"
+  # - "database-team"
+
+# Notifications specific to this repository
+notifications:
+  # Additional Slack channels to notify
+  slack_channels:
+    # - "#project-specific-updates"
+
+  # Additional email recipients
+  email_recipients:
+    # - "project-lead@1fi-finance.com"
+
+  # Create GitHub issues for successful updates (not just failures)
+  create_success_issues: false
+
+# Validation timeout (in minutes)
+# Overrides the default timeout from Master-DB
+validation_timeout: 30
+
+# Skip updates on specific branches
+# Only create PRs if the default branch matches these patterns
+target_branches:
+  - "main"
+  - "master"
+  - "develop"
+
+# Merge strategy for the update PR
+# Options: merge, squash, rebase
+merge_strategy: merge
+
+# Delete the update branch after PR is merged
+delete_branch_on_merge: true
+
+# Custom commit message for the merge
+merge_commit_message: |
+  Merge PR #{{ number }} - Update Master-DB submodule
+
+  Update Master-DB to {{ sha }}
+
+  Co-authored-by: GitHub Actions <actions@github.com>
