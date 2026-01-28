@@ -164,6 +164,34 @@ jobs:
             echo '${{ steps.dispatch.outputs.repos-failed }}' | jq -r '.[]' | sed 's/^/- `&`/' >> $GITHUB_STEP_SUMMARY
           fi
 
+      - name: Send email notification
+        if: always() && secrets.EMAIL_RECIPIENTS != ''
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "Master-DB Submodule Update - ${{ steps.dispatch.outputs.success-count }} dispatched, ${{ steps.dispatch.outputs.failure-count }} failed"
+          to: ${{ secrets.EMAIL_RECIPIENTS }}
+          from: GitHub Actions
+          body: |
+            Master-DB submodule update has been triggered.
+
+            Commit: ${{ github.sha }}
+            Author: ${{ github.event.head_commit.author.name }}
+            Message: ${{ github.event.head_commit.message }}
+
+            Summary:
+            - Successfully dispatched to: ${{ steps.dispatch.outputs.success-count }} repositories
+            - Failed to dispatch to: ${{ steps.dispatch.outputs.failure-count }} repositories
+
+            Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            ${{ steps.dispatch.outputs.failure-count > 0 && 'Failed repositories:\n' || '' }}
+            ${{ steps.dispatch.outputs.repos-failed }}
+          priority: high
+
   create-summary-issue:
     name: Create Summary Issue (if failures)
     needs: discover-and-dispatch
