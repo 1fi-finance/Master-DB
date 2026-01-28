@@ -3,6 +3,7 @@ name: Submodule Update Notifier
 on:
   push:
     branches:
+      - master
       - main
   workflow_dispatch:
     inputs:
@@ -129,7 +130,7 @@ jobs:
                   \"event_type\": \"submodule-updated\",
                   \"client_payload\": {
                     \"sha\": \"${{ github.sha }}\",
-                    \"branch\": \"main\",
+                    \"branch\": \"master\",
                     \"timestamp\": \"$(date -u +%Y%m%d%H%M%S)\",
                     \"commit_message\": \"${{ github.event.head_commit.message }}\",
                     \"committer\": \"${{ github.event.head_commit.author.name }}\"
