@@ -6,3 +6,4 @@ export const lmsSchema = pgSchema("lms");
 export const merchantSchema = pgSchema("merchant");
 export const sharedSchema = pgSchema("shared");
 
+// Test comment for CI/CD
