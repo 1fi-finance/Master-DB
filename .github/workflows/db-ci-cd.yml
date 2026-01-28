@@ -193,13 +193,12 @@ jobs:
     name: Notify on Success
     runs-on: ubuntu-latest
     needs: [validate-schema, test-schema-load]
-    if: success()
+    if: success() && vars.SLACK_WEBHOOK_URL != ''
     steps:
       - name: Send Slack notification
-        if: always()
         uses: slackapi/slack-github-action@v1
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ vars.SLACK_WEBHOOK_URL }}
         with:
           payload: |
             {
@@ -219,13 +218,12 @@ jobs:
     name: Notify on Failure
     runs-on: ubuntu-latest
     needs: [validate-schema, test-schema-load]
-    if: failure()
+    if: failure() && vars.SLACK_WEBHOOK_URL != ''
     steps:
       - name: Send failure notification
-        if: always()
         uses: slackapi/slack-github-action@v1
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ vars.SLACK_WEBHOOK_URL }}
         with:
           payload: |
             {

@@ -165,10 +165,10 @@ jobs:
           fi
 
       - name: Send Slack notification
-        if: always()
+        if: always() && vars.SLACK_WEBHOOK_URL != ''
         uses: slackapi/slack-github-action@v1
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ vars.SLACK_WEBHOOK_URL }}
         with:
           payload: |
             {
@@ -215,36 +215,34 @@ jobs:
             }
 
       - name: Send Discord notification
-        if: always()
+        if: always() && vars.DISCORD_WEBHOOK_URL != ''
         env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_WEBHOOK_URL: ${{ vars.DISCORD_WEBHOOK_URL }}
         run: |
-          if [ -n "$DISCORD_WEBHOOK_URL" ]; then
-            SUCCESS_COUNT="${{ steps.dispatch.outputs.success-count }}"
-            FAILURE_COUNT="${{ steps.dispatch.outputs.failure-count }}"
-            COMMIT_URL="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
-            WORKFLOW_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          SUCCESS_COUNT="${{ steps.dispatch.outputs.success-count }}"
+          FAILURE_COUNT="${{ steps.dispatch.outputs.failure-count }}"
+          COMMIT_URL="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+          WORKFLOW_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-            curl -X POST "$DISCORD_WEBHOOK_URL" \
-              -H "Content-Type: application/json" \
-              -d "{
-                \"content\": \"\",
-                \"embeds\": [{
-                  \"title\": \"🔄 Master-DB Submodule Update\",
-                  \"color\": $([ $FAILURE_COUNT -eq 0 ] && echo 3066993 || echo 15158332),
-                  \"fields\": [
-                    {\"name\": \"Commit\", \"value\": \"[$COMMIT_SHA]($COMMIT_URL)\", \"inline\": true},
-                    {\"name\": \"Author\", \"value\": \"${{ github.event.head_commit.author.name }}\", \"inline\": true},
-                    {\"name\": \"Dispatched\", \"value\": \"$SUCCESS_COUNT repos\", \"inline\": true},
-                    {\"name\": \"Failed\", \"value\": \"$FAILURE_COUNT repos\", \"inline\": true}
-                  ],
-                  \"url\": \"$WORKFLOW_URL\"
-                }]
-              }"
-          fi
+          curl -X POST "$DISCORD_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"content\": \"\",
+              \"embeds\": [{
+                \"title\": \"🔄 Master-DB Submodule Update\",
+                \"color\": $([ $FAILURE_COUNT -eq 0 ] && echo 3066993 || echo 15158332),
+                \"fields\": [
+                  {\"name\": \"Commit\", \"value\": \"[$COMMIT_SHA]($COMMIT_URL)\", \"inline\": true},
+                  {\"name\": \"Author\", \"value\": \"${{ github.event.head_commit.author.name }}\", \"inline\": true},
+                  {\"name\": \"Dispatched\", \"value\": \"$SUCCESS_COUNT repos\", \"inline\": true},
+                  {\"name\": \"Failed\", \"value\": \"$FAILURE_COUNT repos\", \"inline\": true}
+                ],
+                \"url\": \"$WORKFLOW_URL\"
+              }]
+            }"
 
       - name: Send email notification
-        if: always()
+        if: always() && secrets.EMAIL_RECIPIENTS != ''
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
