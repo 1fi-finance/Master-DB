@@ -4,6 +4,7 @@ import { merchantSchema } from "../../definitions";
 import { JourneyType } from "../../enums";
 import { merchants } from "../merchants/merchants";
 import { productsTable } from "../products/products";
+import { productVariantsTable } from "../products/products";
 
 
 export const qrTable = merchantSchema.table("qrTable", {
@@ -13,7 +14,7 @@ export const qrTable = merchantSchema.table("qrTable", {
     journeyType: JourneyType("journeyType").default("basic"),
     amount: decimal({ precision: 15, scale: 2 }),
     productId: uuid().references(() => productsTable.id, { onDelete: "cascade" }),
-    variantId: uuid().references(() => productsTable.id, { onDelete: "cascade" }),
+    variantId: uuid().references(() => productVariantsTable.id, { onDelete: "cascade" }),
     expiresAt: timestamp(),
     qrCodeData: text(),
     isActive: boolean().notNull().default(true),
