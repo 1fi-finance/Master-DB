@@ -13,6 +13,7 @@ export const qrTable = merchantSchema.table("qrTable", {
     amount: decimal({ precision: 15, scale: 2 }),
     productId: uuid().references(() => productsTable.id, { onDelete: "cascade" }),
     variantId: uuid().references(() => productsTable.id, { onDelete: "cascade" }),
+    expiresAt: timestamp(),
     qrCodeData: text(),
     isActive: boolean().notNull().default(true),
     createdAt: timestamp().notNull().defaultNow(),
