@@ -104,54 +104,49 @@ jobs:
 
       - name: Trigger updates in parallel
         id: dispatch
-        uses: nick-fields/retry-action@v2
-        with:
-          timeout_minutes: 45
-          max_attempts: 3
-          retry_on: error
-          command: |
-            #!/bin/bash
-            set -e
+        run: |
+          #!/bin/bash
+          set -e
 
-            REPOS_JSON='${{ steps.discover.outputs.repos-found }}'
-            REPOS_ARRAY=($(echo "$REPOS_JSON" | jq -r '.[]'))
+          REPOS_JSON='${{ steps.discover.outputs.repos-found }}'
+          REPOS_ARRAY=($(echo "$REPOS_JSON" | jq -r '.[]'))
 
-            SUCCESS_REPOS=()
-            FAILED_REPOS=()
+          SUCCESS_REPOS=()
+          FAILED_REPOS=()
 
-            for repo in "${REPOS_ARRAY[@]}"; do
-              echo "Dispatching to $repo..."
+          for repo in "${REPOS_ARRAY[@]}"; do
+            echo "Dispatching to $repo..."
 
-              RESPONSE=$(curl -s -X POST \
-                -H "Accept: application/vnd.github.v3+json" \
-                -H "Authorization: token ${{ secrets.SUBMODULE_UPDATE_PAT }}" \
-                "https://api.github.com/repos/1fi-finance/$repo/dispatches" \
-                -d "{
-                  \"event_type\": \"submodule-updated\",
-                  \"client_payload\": {
-                    \"sha\": \"${{ github.sha }}\",
-                    \"branch\": \"master\",
-                    \"timestamp\": \"$(date -u +%Y%m%d%H%M%S)\",
-                    \"commit_message\": \"${{ github.event.head_commit.message }}\",
-                    \"committer\": \"${{ github.event.head_commit.author.name }}\"
-                  }
-                }")
+            RESPONSE=$(curl -s -X POST \
+              -H "Accept: application/vnd.github.v3+json" \
+              -H "Authorization: token ${{ secrets.SUBMODULE_UPDATE_PAT }}" \
+              "https://api.github.com/repos/1fi-finance/$repo/dispatches" \
+              -d "{
+                \"event_type\": \"submodule-updated\",
+                \"client_payload\": {
+                  \"sha\": \"${{ github.sha }}\",
+                  \"branch\": \"master\",
+                  \"timestamp\": \"$(date -u +%Y%m%d%H%M%S)\",
+                  \"commit_message\": \"${{ github.event.head_commit.message }}\",
+                  \"committer\": \"${{ github.event.head_commit.author.name }}\"
+                }
+              }")
 
-              if echo "$RESPONSE" | grep -q '"accepted"'; then
-                echo "✓ Successfully dispatched to $repo"
-                SUCCESS_REPOS+=("$repo")
-              else
-                echo "✗ Failed to dispatch to $repo"
-                echo "Response: $RESPONSE"
-                FAILED_REPOS+=("$repo")
-              fi
-            done
+            if echo "$RESPONSE" | grep -q '"accepted"'; then
+              echo "✓ Successfully dispatched to $repo"
+              SUCCESS_REPOS+=("$repo")
+            else
+              echo "✗ Failed to dispatch to $repo"
+              echo "Response: $RESPONSE"
+              FAILED_REPOS+=("$repo")
+            fi
+          done
 
-            # Set outputs
-            echo "repos-updated=$(printf '%s\n' "${SUCCESS_REPOS[@]}" | jq -R . | jq -s -c .)" >> $GITHUB_OUTPUT
-            echo "repos-failed=$(printf '%s\n' "${FAILED_REPOS[@]}" | jq -R . | jq -s -c .)" >> $GITHUB_OUTPUT
-            echo "success-count=${#SUCCESS_REPOS[@]}" >> $GITHUB_OUTPUT
-            echo "failure-count=${#FAILED_REPOS[@]}" >> $GITHUB_OUTPUT
+          # Set outputs
+          echo "repos-updated=$(printf '%s\n' "${SUCCESS_REPOS[@]}" | jq -R . | jq -s -c .)" >> $GITHUB_OUTPUT
+          echo "repos-failed=$(printf '%s\n' "${FAILED_REPOS[@]}" | jq -R . | jq -s -c .)" >> $GITHUB_OUTPUT
+          echo "success-count=${#SUCCESS_REPOS[@]}" >> $GITHUB_OUTPUT
+          echo "failure-count=${#FAILED_REPOS[@]}" >> $GITHUB_OUTPUT
 
       - name: Display dispatch results
         run: |
