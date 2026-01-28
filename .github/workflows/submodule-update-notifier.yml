@@ -165,7 +165,7 @@ jobs:
           fi
 
       - name: Send email notification
-        if: always() && secrets.EMAIL_RECIPIENTS != ''
+        if: always()
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
@@ -173,7 +173,7 @@ jobs:
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
           subject: "Master-DB Submodule Update - ${{ steps.dispatch.outputs.success-count }} dispatched, ${{ steps.dispatch.outputs.failure-count }} failed"
-          to: ${{ secrets.EMAIL_RECIPIENTS }}
+          to: tech@1fi.in
           from: GitHub Actions
           body: |
             Master-DB submodule update has been triggered.
