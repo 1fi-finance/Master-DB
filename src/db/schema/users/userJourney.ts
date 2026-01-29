@@ -4,6 +4,7 @@ import { usersSchema } from "../definitions";
 import { usersTable } from "./index";
 import { productsTable, productVariantsTable } from "../merchant/products/products";
 import { sessionJourney } from "../shared/index";
+import { loanApplicationsTable } from "../los/applications";
 export const userJourney = usersSchema.table("merchant_user_journey", {
     id: uuid().primaryKey(),
     sessionId: uuid().references(() => sessionJourney.id).notNull(),
@@ -11,6 +12,7 @@ export const userJourney = usersSchema.table("merchant_user_journey", {
     page: varchar({ length: 255 }).notNull(),
     productId: uuid().references(() => productsTable.id, { onDelete: "cascade" }).notNull(),
     variantId: uuid().references(() => productVariantsTable.id, { onDelete: "cascade" }).notNull(),
+    loanApplicationId: uuid().references(() => loanApplicationsTable.id),
     createdAt: timestamp().notNull().defaultNow(),
     updatedAt: timestamp().notNull().defaultNow()
 }, (table) => ({
