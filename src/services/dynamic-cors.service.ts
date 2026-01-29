@@ -14,18 +14,20 @@
  */
 
 import { eq, and, or } from "drizzle-orm";
-import { db } from "../db";
 import { corsConfig } from "../db/schema/shared";
 
 export class DynamicCorsService {
     private serviceName: string;
+    private db: any;
 
     /**
      * Creates a new DynamicCorsService instance
      * @param serviceName - The service identifier ('mms', 'los', etc.)
+     * @param db - The Drizzle database instance
      */
-    constructor(serviceName: string) {
+    constructor(serviceName: string, db: any) {
         this.serviceName = serviceName;
+        this.db = db;
     }
 
     /**
@@ -35,7 +37,7 @@ export class DynamicCorsService {
      */
     async getAllowedOrigins(): Promise<string[]> {
         try {
-            const configs = await db
+            const configs = await this.db
                 .select({ origin: corsConfig.origin })
                 .from(corsConfig)
                 .where(
@@ -112,8 +114,9 @@ export class DynamicCorsService {
 /**
  * Factory function to create a DynamicCorsService instance
  * @param serviceName - The service identifier ('mms', 'los', etc.)
+ * @param db - The Drizzle database instance
  * @returns DynamicCorsService instance
  */
-export function createDynamicCorsService(serviceName: string): DynamicCorsService {
-    return new DynamicCorsService(serviceName);
+export function createDynamicCorsService(serviceName: string, db: any): DynamicCorsService {
+    return new DynamicCorsService(serviceName, db);
 }

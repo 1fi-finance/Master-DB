@@ -21,10 +21,11 @@ import { DynamicCorsService } from "../services/dynamic-cors.service";
 /**
  * Creates a dynamic CORS middleware for a specific service
  * @param serviceName - The service identifier ('mms', 'los', etc.)
+ * @param db - The Drizzle database instance
  * @returns Express middleware function
  */
-export function createDynamicCorsMiddleware(serviceName: string) {
-    const corsService = new DynamicCorsService(serviceName);
+export function createDynamicCorsMiddleware(serviceName: string, db: any) {
+    const corsService = new DynamicCorsService(serviceName, db);
 
     return async (req: Request, res: Response, next: NextFunction) => {
         const origin = req.headers.origin;
@@ -74,10 +75,11 @@ export function createDynamicCorsMiddleware(serviceName: string) {
  * Alternative: Creates a dynamic CORS middleware that uses the cors package's
  * origin callback function for async origin validation
  * @param serviceName - The service identifier ('mms', 'los', etc.)
+ * @param db - The Drizzle database instance
  * @returns Express middleware function
  */
-export function createDynamicCorsMiddlewareCallback(serviceName: string) {
-    const corsService = new DynamicCorsService(serviceName);
+export function createDynamicCorsMiddlewareCallback(serviceName: string, db: any) {
+    const corsService = new DynamicCorsService(serviceName, db);
 
     return cors({
         origin: async (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
