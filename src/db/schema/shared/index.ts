@@ -19,3 +19,10 @@ export const apiKeys = sharedSchema.table("api_keys", {
     createdAt: timestamp().notNull().defaultNow(),
     updatedAt: timestamp().notNull().defaultNow()
 });
+
+export const cors = sharedSchema.table("cors", {
+    id: uuid().primaryKey(),
+    origin: varchar({ length: 255 }).notNull(),
+    createdAt: timestamp().notNull().defaultNow(),
+    updatedAt: timestamp().notNull().defaultNow()
+});
