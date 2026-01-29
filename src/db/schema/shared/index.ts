@@ -1,4 +1,4 @@
-import { uuid, varchar, timestamp } from "drizzle-orm/pg-core";
+import { uuid, varchar, timestamp, boolean } from "drizzle-orm/pg-core";
 
 import { sharedSchema } from "../definitions";
 import { productsTable, productVariantsTable } from "../merchant/products/products";
@@ -23,6 +23,16 @@ export const apiKeys = sharedSchema.table("api_keys", {
 export const cors = sharedSchema.table("cors", {
     id: uuid().primaryKey(),
     origin: varchar({ length: 255 }).notNull(),
+    createdAt: timestamp().notNull().defaultNow(),
+    updatedAt: timestamp().notNull().defaultNow()
+});
+
+// Enhanced CORS configuration table for dynamic CORS management
+export const corsConfig = sharedSchema.table("cors_config", {
+    id: uuid().primaryKey().defaultRandom(),
+    service: varchar({ length: 50 }).notNull(), // 'mms', 'los', '*'
+    origin: varchar({ length: 255 }).notNull(),
+    isActive: boolean().notNull().default(true),
     createdAt: timestamp().notNull().defaultNow(),
     updatedAt: timestamp().notNull().defaultNow()
 });
