@@ -43,6 +43,13 @@
       "when": 1769689269206,
       "tag": "0005_powerful_scrambler",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1769762199383,
+      "tag": "0006_optimal_shotgun",
+      "breakpoints": true
     }
   ]
 }

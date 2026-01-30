@@ -262,3 +262,12 @@ export const analyticsPeriodEnum = pgEnum("analytics_period", [
     "weekly",
     "monthly"
 ]);
+
+export const gstVerificationStatusEnum = pgEnum("gst_verification_status", [
+    "pending",      // Not yet verified
+    "verified",     // API returned valid=true, active=true
+    "inactive",     // API returned valid=true, active=false
+    "invalid",      // API returned valid=false
+    "failed",       // API call failed (network/timeout)
+    "mismatch"      // Valid but PAN doesn't match merchant PAN
+]);

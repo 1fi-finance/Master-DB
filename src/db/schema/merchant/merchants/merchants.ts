@@ -1,7 +1,7 @@
 import { uuid, varchar, text, timestamp, decimal, integer, boolean, jsonb, index } from "drizzle-orm/pg-core";
 
 import { merchantSchema } from "../../definitions";
-import { storeTypeEnum } from "../../enums";
+import { storeTypeEnum, gstVerificationStatusEnum } from "../../enums";
 
 export const merchants = merchantSchema.table("merchants", {
     id: uuid().primaryKey(),
@@ -41,6 +41,20 @@ export const merchantKYC = merchantSchema.table("merchant_kyc", {
     businessDescription: text(),
     createdAt: timestamp().notNull().defaultNow(),
     updatedAt: timestamp().notNull().defaultNow(),
+
+    // GST Verification Fields
+    gstVerificationStatus: gstVerificationStatusEnum().default("pending"),
+    gstVerifiedAt: timestamp(),
+    gstVerificationData: jsonb(),  // Full API response for audit
+    gstLegalName: varchar({ length: 255 }),
+    gstTradeName: varchar({ length: 255 }),
+    gstConstitution: varchar({ length: 100 }),  // "Private Limited Company", etc.
+    gstType: varchar({ length: 50 }),  // "Regular", "Composition", etc.
+    gstState: varchar({ length: 100 }),
+    gstStateCode: varchar({ length: 10 }),
+    gstRegisteredDate: varchar({ length: 20 }),
+    gstActive: boolean(),
+    gstEinvoiceEnabled: boolean(),
 });
 
 export const merchantStoresTable = merchantSchema.table("merchant_stores", {
@@ -91,7 +105,21 @@ export const merchantStoresTable = merchantSchema.table("merchant_stores", {
     storeManagerPhone: varchar({ length: 15 }),
 
     createdAt: timestamp().notNull().defaultNow(),
-    updatedAt: timestamp().notNull().defaultNow()
+    updatedAt: timestamp().notNull().defaultNow(),
+
+    // GST Verification Fields
+    gstVerificationStatus: gstVerificationStatusEnum().default("pending"),
+    gstVerifiedAt: timestamp(),
+    gstVerificationData: jsonb(),  // Full API response for audit
+    gstLegalName: varchar({ length: 255 }),
+    gstTradeName: varchar({ length: 255 }),
+    gstConstitution: varchar({ length: 100 }),
+    gstType: varchar({ length: 50 }),
+    gstState: varchar({ length: 100 }),
+    gstStateCode: varchar({ length: 10 }),
+    gstRegisteredDate: varchar({ length: 20 }),
+    gstActive: boolean(),
+    gstEinvoiceEnabled: boolean(),
 }, (table) => ({
     merchantIdIdx: index("store_merchant_id").on(table.merchantId),
     storeCodeIdx: index("store_code").on(table.storeCode),
