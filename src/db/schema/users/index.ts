@@ -23,3 +23,6 @@ export const usersTable = usersSchema.table("users", {
 
 
 });
+
+// Re-export autopayTable for modules that need both users and autopay
+export { autopayTable } from "./autopay";
